@@ -16,6 +16,7 @@ export function QuantityStepper({
   label = 'Quantidade',
   showLabel = false,
   disabled = false,
+  tone = 'primary',
 }: {
   value: number
   max: number
@@ -25,14 +26,17 @@ export function QuantityStepper({
   label?: string
   showLabel?: boolean
   disabled?: boolean
+  /** `dark`: round surface buttons of the mobile cart frame. */
+  tone?: 'primary' | 'dark'
 }) {
   const id = useId()
   const atMax = value >= max
   const button = cn(
-    'flex items-center justify-center rounded-full border border-ink bg-primary shadow-[0_6px_10px_rgba(20,13,10,0.15)]',
+    'flex items-center justify-center rounded-full shadow-[0_6px_10px_rgba(20,13,10,0.15)]',
+    tone === 'dark' ? 'border border-border bg-surface-raised' : 'border border-ink bg-primary',
     'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-ink focus-visible:outline-none',
     'disabled:cursor-not-allowed disabled:opacity-40',
-    size === 'lg' ? 'h-[49.5px] w-[33px]' : 'h-[30px] w-5',
+    size === 'lg' ? 'h-[49.5px] w-[33px]' : tone === 'dark' ? 'size-7' : 'h-[30px] w-5',
   )
   const icon = size === 'lg' ? 26 : 16
 
@@ -55,7 +59,13 @@ export function QuantityStepper({
             disabled={disabled || value <= 1}
             aria-label="Diminuir quantidade"
           >
-            <img src={minusIcon} alt="" width={icon} height={icon} />
+            <img
+              src={minusIcon}
+              alt=""
+              width={icon}
+              height={icon}
+              className={tone === 'dark' ? 'invert' : undefined}
+            />
           </button>
           <output
             aria-live="polite"
@@ -74,7 +84,13 @@ export function QuantityStepper({
             aria-label="Aumentar quantidade"
             aria-describedby={atMax && limitReason ? `${id}-limit` : undefined}
           >
-            <img src={plusIcon} alt="" width={icon} height={icon} />
+            <img
+              src={plusIcon}
+              alt=""
+              width={icon}
+              height={icon}
+              className={tone === 'dark' ? 'invert' : undefined}
+            />
           </button>
         </div>
       </div>

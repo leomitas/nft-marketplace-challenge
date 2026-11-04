@@ -18,7 +18,8 @@ function MockPanel() {
   }
 
   return (
-    <div className="fixed bottom-28 left-3 z-[60] font-sans text-xs md:bottom-4">
+    // Left edge, mid-height: clear of the bottom sheets and buy bars of the mobile screens
+    <div className="fixed top-1/2 left-0 z-[60] -translate-y-1/2 font-sans text-xs md:top-auto md:bottom-4 md:left-3 md:translate-y-0">
       {open ? (
         <section
           aria-label="Painel de mocks"
@@ -77,7 +78,7 @@ function MockPanel() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="rounded-full border border-border-soft bg-surface-dark/90 px-3 py-1.5 text-text-secondary shadow-lg hover:text-foreground"
+          className="rounded-r-full border border-border-soft bg-surface-dark/90 px-2 py-1.5 text-text-secondary shadow-lg hover:text-foreground md:rounded-full md:px-3"
         >
           Mocks{scenario !== 'default' ? ` · ${scenario}` : ''}
         </button>

@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { CartLink } from '@/features/cart/cart-link'
 import heartIcon from '@/assets/figma/m-icon-heart.svg'
 import homeIcon from '@/assets/figma/m-icon-home.svg'
 import scanIcon from '@/assets/figma/m-icon-scan.svg'
@@ -8,8 +9,8 @@ import tabBarBg from '@/assets/figma/m-tabbar-bg.svg'
 import tabBarCenter from '@/assets/figma/m-tabbar-center.svg'
 
 /**
- * Bottom navigation from the mobile frames. The cart arrives with its slice; the center scan
- * action is out of scope, so it is disabled rather than fake. Private tabs go through the
+ * Bottom navigation from the mobile frames. The center scan action is out of scope, so it is
+ * disabled rather than fake. Private tabs go through the
  * auth guard, so visitors land on login and come back afterwards.
  */
 export function MobileTabBar() {
@@ -48,34 +49,12 @@ export function MobileTabBar() {
         </li>
         <TabLink to="/favoritos" icon={heartIcon} label="Favoritos" width={20} height={18} />
         <li aria-hidden="true" />
-        <SoonItem icon={shopIcon} label="Carrinho" width={20} height={20} />
+        <li className="flex justify-center">
+          <CartLink icon={shopIcon} iconSize={[20, 20]} className="size-11 rounded-full" />
+        </li>
         <TabLink to="/perfil" icon={userIcon} label="Perfil" width={20} height={20} />
       </ul>
     </nav>
-  )
-}
-
-function SoonItem({
-  icon,
-  label,
-  width,
-  height,
-}: {
-  icon: string
-  label: string
-  width: number
-  height: number
-}) {
-  return (
-    <li className="flex justify-center">
-      <span
-        className="flex size-11 items-center justify-center opacity-60"
-        title="Disponível em breve"
-      >
-        <img src={icon} alt="" width={width} height={height} />
-        <span className="sr-only">{label} (disponível em breve)</span>
-      </span>
-    </li>
   )
 }
 

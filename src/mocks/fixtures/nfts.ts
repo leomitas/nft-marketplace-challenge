@@ -220,7 +220,7 @@ function generated(count: number): Seed[] {
 }
 
 /** Price multiplier and supply of each edition tier, relative to the 1/50 base price. */
-const TIER_RULES: Record<EditionId, { multiplier: string; supply: number }> = {
+export const TIER_RULES: Record<EditionId, { multiplier: string; supply: number }> = {
   '1-1': { multiplier: '5', supply: 1 },
   '1-10': { multiplier: '2', supply: 10 },
   '1-50': { multiplier: '1', supply: 50 },
@@ -332,4 +332,15 @@ export function toSummary(record: NftRecord): NftSummary {
     listedAt: record.listedAt,
     version: record.version,
   }
+}
+
+/** Changes the base (1/50) price and re-derives every tier price, bumping the version. */
+export function applyBasePrice(record: NftRecord, priceEth: string) {
+  record.previousPriceEth = record.priceEth
+  record.priceEth = new Big(priceEth).toFixed(2)
+  record.editionOptions = record.editionOptions.map((edition) => ({
+    ...edition,
+    priceEth: new Big(record.priceEth).times(TIER_RULES[edition.id].multiplier).toFixed(2),
+  }))
+  record.version += 1
 }

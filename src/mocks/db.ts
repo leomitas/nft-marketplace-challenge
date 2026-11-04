@@ -1,3 +1,4 @@
+import type { EditionId } from '@/api/contracts/catalog'
 import { createNftFixtures, type NftRecord } from './fixtures/nfts'
 import { createFavoriteFixtures, createUserFixtures, type UserRecord } from './fixtures/users'
 
@@ -6,9 +7,24 @@ import { createFavoriteFixtures, createUserFixtures, type UserRecord } from './f
  * mutations. Bump DB_VERSION whenever the shape or fixtures change: old data is discarded.
  */
 const DB_KEY = 'kurio:mock-db'
-const DB_VERSION = 2
+const DB_VERSION = 3
 
 export type SessionRecord = { token: string; userId: string; expiresAt: string }
+
+export type CartLineRecord = {
+  nftId: string
+  editionId: EditionId
+  quantity: number
+  /** Unit price when the line was added (or last acknowledged); detects price changes. */
+  acceptedPriceEth: string
+}
+
+export type CartRecord = {
+  id: string
+  lines: CartLineRecord[]
+  couponCode: string | null
+  updatedAt: string
+}
 
 export type DbState = {
   version: typeof DB_VERSION
@@ -17,6 +33,8 @@ export type DbState = {
   sessions: SessionRecord[]
   /** userId -> NFT ids, most recent first */
   favorites: Record<string, string[]>
+  /** `user:<id>` or `guest:<cart id>` -> cart */
+  carts: Record<string, CartRecord>
 }
 
 function seed(): DbState {
@@ -26,6 +44,7 @@ function seed(): DbState {
     users: createUserFixtures(),
     sessions: [],
     favorites: createFavoriteFixtures(),
+    carts: {},
   }
 }
 

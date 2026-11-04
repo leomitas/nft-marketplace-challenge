@@ -1,6 +1,7 @@
 import { Link, useCanGoBack, useNavigate, useRouter } from '@tanstack/react-router'
 import { cn } from 'cn'
 import { Dialog as DialogPrimitive } from 'radix-ui'
+import { useEffect } from 'react'
 import closeIcon from '@/assets/figma/icon-close.svg'
 import facebookIcon from '@/assets/figma/icon-facebook.svg'
 import googleIcon from '@/assets/figma/icon-google.svg'
@@ -41,6 +42,10 @@ export function AuthLayout({
   const copy = COPY[mode]
   const router = useRouter()
   const canGoBack = useCanGoBack()
+
+  // This dialog unmounts while still open (login navigates to another route). Radix sometimes
+  // leaves `pointer-events: none` on <body> in that case, freezing the next page; reset it.
+  useEffect(() => () => void (document.body.style.pointerEvents = ''), [])
   // Closing returns to the previous page. It never goes to `redirect`: that may be a
   // private page, which would just bounce back here.
   const close = () => (canGoBack ? router.history.back() : void navigate({ to: '/' }))
