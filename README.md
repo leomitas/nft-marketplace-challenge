@@ -35,7 +35,7 @@ pnpm dev            # http://localhost:5173
 | `pnpm format`                 | Prettier                                                                                             |
 | `pnpm test:e2e`               | Playwright (build + preview, Chromium desktop 1440 e mobile Pixel 7)                                 |
 | `pnpm test:e2e:report`        | Abre o relatório HTML do último run (traces das falhas incluídos)                                    |
-| `pnpm test:e2e:update-visual` | Regera as baselines de regressão visual (do SO atual)                                                |
+| `pnpm test:e2e:update-visual` | Regera as baselines de regressão visual (ver "Regressão visual")                                     |
 | `pnpm lighthouse`             | Build + Lighthouse (início e detalhe, mobile e desktop, 3× cada, mediana em `lighthouse/summary.md`) |
 
 ## Variáveis de ambiente
@@ -158,10 +158,32 @@ As senhas existem no mock apenas como hash SHA-256 com salt; novas contas podem 
 ```
 src/
   api/           client Axios, contratos (zod) e funções por recurso
-  features/      catalog (e as próximas: nft, cart, checkout, auth, profile, wallets, realtime)
+  features/      catalog, nft, favorites, auth, cart, checkout, profile
+  realtime/      cliente Socket.IO e aplicação dos eventos no cache
   mocks/         MSW: handlers, db persistido, fixtures determinísticas, cenários
   components/    ui (shadcn adaptado) e layout (header, footer, tab bar mobile)
   routes/        TanStack Router (file-based)
-e2e/             testes Playwright
+e2e/             testes Playwright (+ __screenshots__/ com as baselines visuais)
+lighthouse/      resumo e relatórios da auditoria
+scripts/         lighthouse.mjs
 docs/figma/      tokens, especificação das telas e screenshots de referência
 ```
+
+## Regressão visual
+
+`e2e/visual.spec.ts` compara início, detalhe, carrinho e pagamento (desktop e mobile) com um único
+conjunto de baselines em `e2e/__screenshots__/`, válido para qualquer SO: as fontes são locais
+(`@fontsource`) e a tolerância (`maxDiffPixelRatio: 0.03`, em `playwright.config.ts`) absorve diferenças
+de anti-aliasing entre Windows, macOS e Linux. Depois de uma mudança visual intencional:
+
+```bash
+pnpm test:e2e:update-visual   # regera as 8 imagens
+pnpm exec playwright test e2e/visual.spec.ts   # confere
+```
+
+Revise as imagens alteradas no diff antes de commitar.
+
+## Uso de IA
+
+O projeto foi desenvolvido com o [Claude Code](https://claude.com/claude-code) como apoio (código,
+testes e documentação) e revisado por mim, Leonardo Abreu, que respondo pelas decisões e pela entrega.

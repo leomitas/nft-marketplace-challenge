@@ -67,6 +67,14 @@ test.describe('Pagamento e confirmação', () => {
     await expect(page.getByRole('article')).toContainText('1.19 ETH')
     await expect(page.getByRole('article')).not.toContainText('9.99 ETH')
 
+    // The transaction link opens the app's simulated explorer, clearly labeled as such
+    await page.getByRole('link', { name: 'Ver no explorador (simulado)' }).click()
+    await expect(page).toHaveURL(/\/pedidos\/ord_\w+\/transacao$/)
+    await expect(page.getByRole('heading', { name: 'Explorador simulado' })).toBeVisible()
+    await expect(page.getByRole('note')).toContainText('não existe em nenhuma blockchain')
+    await expect(page.getByRole('main')).toContainText(/0x[0-9a-f]{64}/)
+    await expect(page.getByRole('main')).toContainText('2.596 ETH')
+
     // Bought items left the cart
     await page.goto('/carrinho')
     await expect(page.getByText('Seu carrinho está vazio')).toBeVisible()

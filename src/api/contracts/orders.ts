@@ -71,7 +71,10 @@ export const orderSchema = z.object({
     provider: walletProviderSchema,
     network: networkIdSchema,
   }),
-  /** Simulated on-chain reference, present once confirmed. */
+  /**
+   * Simulated on-chain reference, present once confirmed. `explorerUrl` is an in-app path to the
+   * simulated explorer (the hash does not exist on any real network).
+   */
   transaction: z.object({ hash: z.string(), explorerUrl: z.string() }).nullable(),
   failureReason: z.string().nullable(),
 })
