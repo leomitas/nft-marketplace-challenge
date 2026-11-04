@@ -71,7 +71,15 @@ export function CartSummary({
   )
 }
 
-function Totals({ quote, updating, mobile }: { quote: Quote; updating: boolean; mobile: boolean }) {
+export function Totals({
+  quote,
+  updating,
+  mobile,
+}: {
+  quote: Quote
+  updating: boolean
+  mobile: boolean
+}) {
   return (
     <dl
       className={cn(

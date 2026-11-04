@@ -173,6 +173,49 @@ Visitante que clica em favoritar vai para o login e volta ao mesmo NFT.
 | DELETE | `/api/cart/coupon`        | remove o cupom                                                          |
 | POST   | `/api/cart/merge`         | privado; usa `X-Cart-Id` do visitante                                   |
 
+## Pagamento e pedidos
+
+- **Carteiras**: vêm de `GET /api/me/wallets` (fixtures: Ana tem principal + reserva, Bruno só
+  principal). A conexão é simulada no servidor (`PUT/DELETE /api/me/wallet-connection`), por usuário,
+  e vale para a combinação carteira + app (MetaMask/WalletConnect/Coinbase) + rede. Trocar qualquer um
+  exige conectar de novo; logout desconecta.
+- **Revisão**: "Confirmar compra" valida o formulário (zod compartilhado com o mock) e abre um diálogo
+  com tudo o que será enviado e a cotação atual. O pedido leva o `quoteId` que o usuário viu. Se a
+  cotação muda com o diálogo aberto (ou o servidor rejeita), o botão de pagar fica bloqueado até o usuário
+  aceitar os novos valores.
+- **Revalidação no servidor** (`POST /api/orders`): carrinho não vazio, carteira conectada,
+  `purchasable` (sem preço alterado/estoque) e `quoteId` igual à cotação atual. Caso contrário 409
+  (`CART_EMPTY`, `WALLET_NOT_CONNECTED`, `CART_HAS_ISSUES`, `QUOTE_OUTDATED`).
+- **Idempotência**: o header `Idempotency-Key` é derivado do conteúdo do pedido e guardado em
+  `sessionStorage` (por usuário): cliques repetidos, retry após timeout e reload reenviam a mesma chave.
+  Mesma chave + mesmo corpo → o servidor devolve o pedido existente (200, `Idempotent-Replayed`);
+  mesma chave + corpo diferente → 409 `IDEMPOTENCY_CONFLICT`. Um pedido recusado descarta a chave
+  (tentar de novo é um pedido novo). Diferente das outras mutations, a criação de pedido faz **1 retry
+  automático** em falha transitória, seguro justamente pela chave. Timeout da criação: 5 s.
+- **Estados**: `pending` → `confirmed | refused` (terminais). O mock decide o desfecho na criação
+  (cenário) e liquida após 2,5 s, de forma preguiçosa a cada leitura do pedido, então refresh/reabertura
+  sempre veem o estado real. A página `/pedidos/:id` consulta a cada 1 s enquanto pendente (na fatia 5
+  o `order.updated` via Socket.IO passa a ser o caminho principal). A confirmação só aparece com
+  `status === 'confirmed'` vindo da API.
+- **Efeitos da confirmação** (no servidor): baixa o estoque das edições, incrementa `version` dos NFTs
+  e remove do carrinho apenas as quantidades compradas. Se o estoque acabou entre a criação e a
+  liquidação, o pedido é recusado. Recusa não altera carrinho nem estoque.
+- **Recibo = snapshot**: o pedido guarda nome, imagem, edição, preço unitário, totais, carteira e rede
+  no momento da compra; nada é relido do catálogo.
+- **Rascunho**: o formulário fica em `sessionStorage` por usuário, então expirar a sessão (login e
+  volta) ou recarregar não perde o que foi digitado. É apagado ao confirmar o pedido e no logout.
+- **Isolamento**: pedido de outro usuário → 403 `FORBIDDEN` (a tela mostra "Pedido não encontrado").
+
+| Método | Rota                        | Observação                                                     |
+| ------ | --------------------------- | -------------------------------------------------------------- |
+| GET    | `/api/me/wallets`           | `{ items: Wallet[] }`                                          |
+| GET    | `/api/me/wallet-connection` | `{ connection: WalletConnection \| null }`                     |
+| PUT    | `/api/me/wallet-connection` | `{ walletId, provider, network }`; 409 `WALLET_REJECTED`       |
+| DELETE | `/api/me/wallet-connection` | `{ connection: null }`                                         |
+| POST   | `/api/orders`               | header `Idempotency-Key`; corpo `CreateOrder`; 201/200 `Order` |
+| GET    | `/api/orders`               | `{ items: Order[] }` do usuário                                |
+| GET    | `/api/orders/:id`           | `Order`; 404 `NOT_FOUND`; 403 `FORBIDDEN`                      |
+
 ## Mocks
 
 - **Ativação**: `VITE_ENABLE_MOCKS` (padrão ligado; só `false` desliga). Como não há backend real, o
@@ -276,3 +319,18 @@ Visitante que clica em favoritar vai para o login e volta ao mesmo NFT.
 - **Badge do carrinho** = soma das quantidades (o Figma mostra um número fixo).
 - **Desconto sem cupom**: o Figma mostra "(-) 00.00"; aqui é "(-) 0.00 ETH", no mesmo formato dos
   demais valores. Valores com mais de 2 casas (taxa, total) aparecem com a precisão da API (até 6).
+
+### Pagamento e confirmação
+
+- **Endereço da carteira, ENS, "Tipo de carteira" e "Usar outra carteira?"** do frame desktop viraram
+  a escolha entre as **carteiras cadastradas** (cards como no frame mobile), porque o enunciado pede
+  usar as carteiras do perfil. "Nome do perfil" e "Nome ENS" saíram (o ENS vem da carteira).
+- **Código de indicação** aparece como opcional (o Figma marca obrigatório, mas não há regra para ele).
+- **"Carteira e rede"**: os três apps do Figma são radios; a rede é um select. Há um botão explícito
+  "Conectar carteira" (estado conectado/desconectado/recusado) que o Figma não desenha.
+- **Revisão** é um diálogo (não há frame); o CTA "Confirmar compra" do Figma abre a revisão e o
+  pagamento é enviado por "Confirmar e pagar".
+- **Confirmação**: o Figma desenha um modal sobre a página; aqui é uma página `/pedidos/:id` com o mesmo
+  card (recarregável e com URL própria). No mobile, o mesmo card ocupa a largura. Estados pendente e
+  recusado seguem o mesmo card. "Ver no Etherscan" abre um link simulado.
+- Ícones dos apps de carteira usam a letra inicial (como o "W" do frame mobile) em vez de logos de marca.

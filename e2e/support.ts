@@ -9,6 +9,8 @@ export async function openWithScenario(page: Page, path: string, scenario = 'def
   url.searchParams.set('reset', '1')
   url.searchParams.set('scenario', scenario)
   await page.goto(`${url.pathname}${url.search}`)
+  // The mock layer strips both params once applied; navigating earlier would lose them
+  await page.waitForURL((current) => !current.searchParams.has('reset'))
 }
 
 /** Switches the scenario through the mock layer's own storage, as `?scenario=` does. */
@@ -99,4 +101,42 @@ export function cartLines(page: Page) {
     .getByRole('list', { name: 'Itens do carrinho' })
     .filter({ visible: true })
     .getByRole('listitem')
+}
+
+/** Every order on the fake server (id, owner, status), to assert no duplicates were created. */
+export async function mockOrders(page: Page) {
+  return page.evaluate(
+    async () =>
+      (await (await fetch('/api/__mock/orders')).json()) as {
+        id: string
+        userId: string
+        status: string
+      }[],
+  )
+}
+
+/** Signs in, fills the cart from the detail page and opens payment through the cart CTA. */
+export async function startCheckout(
+  page: Page,
+  user: { email: string; password: string },
+  nftIds: string[] = ['emerald-ape-042'],
+) {
+  await signIn(page, user, '/')
+  for (const id of nftIds) await addToCartFromDetail(page, id)
+  await page.getByRole('link', { name: 'Conectar e finalizar' }).filter({ visible: true }).click()
+  await expect(page).toHaveURL(/\/pagamento$/)
+  await expect(page.getByRole('form', { name: 'Pagamento' })).toBeVisible()
+}
+
+export async function connectWallet(page: Page) {
+  await page.getByRole('button', { name: 'Conectar carteira' }).click()
+  await expect(page.getByRole('status').filter({ hasText: 'Conectada' })).toBeVisible()
+}
+
+/** Opens the review dialog from the payment form. */
+export async function openReview(page: Page) {
+  await page.getByRole('button', { name: 'Confirmar compra' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Revise seu pedido' })
+  await expect(dialog).toBeVisible()
+  return dialog
 }

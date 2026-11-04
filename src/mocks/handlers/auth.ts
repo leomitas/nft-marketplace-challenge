@@ -142,7 +142,10 @@ export const authHandlers = [
     await simulateLatency()
     const token = bearer(request)
     db.update((draft) => {
+      const session = draft.sessions.find((s) => s.token === token)
       draft.sessions = draft.sessions.filter((s) => s.token !== token)
+      // Signing out also disconnects the simulated wallet
+      if (session) delete draft.connections[session.userId]
     })
     return new HttpResponse(null, { status: 204 })
   }),
