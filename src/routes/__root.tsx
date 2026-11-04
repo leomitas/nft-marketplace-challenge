@@ -1,5 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, Link, Outlet } from '@tanstack/react-router'
+import { MobileTabBar } from '@/components/layout/mobile-tab-bar'
+import { PageShell } from '@/components/layout/page-shell'
 
 export type RouterContext = { queryClient: QueryClient }
 
@@ -10,20 +12,29 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootLayout() {
   return (
-    <div className="min-h-dvh">
+    <>
+      <a
+        href="#conteudo"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-[6px] focus:bg-primary focus:px-4 focus:py-2 focus:font-bold focus:text-ink"
+      >
+        Pular para o conteúdo
+      </a>
       <Outlet />
-    </div>
+      <MobileTabBar />
+    </>
   )
 }
 
 function NotFound() {
   return (
-    <main className="mx-auto flex max-w-content flex-col items-start gap-4 px-4 py-24">
-      <h1 className="text-2xl font-bold">Página não encontrada</h1>
-      <p className="text-muted-foreground">O endereço acessado não existe.</p>
-      <Link to="/" className="text-text-accent underline underline-offset-4">
-        Voltar ao início
-      </Link>
-    </main>
+    <PageShell section="home">
+      <section className="flex flex-col items-start gap-4 py-16">
+        <h1 className="text-2xl font-bold">Página não encontrada</h1>
+        <p className="text-text-secondary">O endereço acessado não existe.</p>
+        <Link to="/" className="font-bold text-text-accent underline underline-offset-4">
+          Voltar ao início
+        </Link>
+      </section>
+    </PageShell>
   )
 }

@@ -9,6 +9,7 @@
   --ink: #140d0a;
   --surface-card: #241612;
   --surface-dark: #38220f;
+  --surface-raised: #2f1d15;
   --border-strong: #3f2319;
   --border-soft: #55321f;
   --brand-primary: #d28a4c;
@@ -66,6 +67,7 @@
   --color-ink: var(--ink);
   --color-surface-card: var(--surface-card);
   --color-surface-dark: var(--surface-dark);
+  --color-surface-raised: var(--surface-raised);
   --color-border-soft: var(--border-soft);
   --color-brand-secondary: var(--brand-secondary);
   --color-text-accent: var(--text-accent);
@@ -78,6 +80,14 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   --container-content: 1200px;
+
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
 }
 
 @layer base {
