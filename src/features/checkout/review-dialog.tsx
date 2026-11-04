@@ -32,6 +32,7 @@ export function ReviewDialog({
   onAcceptQuote,
   onClose,
   onWalletDisconnected,
+  returnFocusTo,
 }: {
   payload: ReviewPayload
   cart: Cart
@@ -39,6 +40,8 @@ export function ReviewDialog({
   onAcceptQuote: (quoteId: string) => void
   onClose: () => void
   onWalletDisconnected: () => void
+  /** The dialog is opened from code (form submit), so focus is returned explicitly. */
+  returnFocusTo: React.RefObject<HTMLElement | null>
 }) {
   const order = useCreateOrder()
   const quoteChanged = quote.id !== payload.quoteId
@@ -67,7 +70,12 @@ export function ReviewDialog({
     <DialogPrimitive.Root
       open
       // While the order is being sent the dialog stays: closing it would hide the outcome
-      onOpenChange={(open) => !open && !order.isPending && onClose()}
+      onOpenChange={(open) => {
+        if (open || order.isPending) return
+        onClose()
+        // After unmount (Radix would fall back to <body>), back to the button that opened it
+        window.setTimeout(() => returnFocusTo.current?.focus(), 0)
+      }}
     >
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-ink/75" />

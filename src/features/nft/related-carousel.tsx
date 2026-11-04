@@ -92,7 +92,8 @@ export function RelatedCarousel({
       </ul>
 
       {pages > 1 && (
-        <div className="flex justify-center gap-2" role="group" aria-label="Páginas do carrossel">
+        // 24px hit areas around the 12px dots (WCAG target size); negative margin keeps the spacing
+        <div className="-my-1.5 flex justify-center" role="group" aria-label="Páginas do carrossel">
           {Array.from({ length: pages }, (_, i) => (
             <button
               key={i}
@@ -100,11 +101,15 @@ export function RelatedCarousel({
               aria-label={`Ir para a página ${i + 1} de ${pages}`}
               aria-current={i === page ? 'true' : undefined}
               onClick={() => scroller.current?.scrollTo({ left: i * scroller.current.clientWidth })}
-              className={cn(
-                'size-3 rounded-full border border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-ink focus-visible:outline-none',
-                i === page && 'bg-primary',
-              )}
-            />
+              className="group flex size-6 items-center justify-center rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              <span
+                className={cn(
+                  'size-3 rounded-full border border-primary',
+                  i === page && 'bg-primary',
+                )}
+              />
+            </button>
           ))}
         </div>
       )}

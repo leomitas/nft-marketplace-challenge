@@ -108,6 +108,7 @@ function CheckoutForm({
   const id = useId()
   const formRef = useRef<HTMLFormElement>(null)
   const connectRef = useRef<HTMLButtonElement>(null)
+  const submitRef = useRef<HTMLButtonElement>(null)
   const [draft, setDraft] = useState<CheckoutDraft>(() => checkoutDraft.load(user.id))
   const [errors, setErrors] = useState<FieldErrors>({})
   const [review, setReview] = useState<ReviewPayload | null>(null)
@@ -361,6 +362,7 @@ function CheckoutForm({
 
           <div className="fixed inset-x-0 bottom-0 z-40 bg-background/95 px-6 pt-3 pb-6 md:static md:bg-transparent md:p-0">
             <button
+              ref={submitRef}
               type="submit"
               className="h-[60px] w-full rounded-full bg-linear-[100deg] from-primary to-primary/80 text-base font-bold text-ink hover:opacity-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-ink focus-visible:outline-none md:h-10 md:rounded-[3px] md:bg-primary md:bg-none md:text-[15px]"
             >
@@ -373,6 +375,7 @@ function CheckoutForm({
       {review && (
         <ReviewDialog
           payload={review}
+          returnFocusTo={submitRef}
           cart={cart}
           quote={quote}
           onAcceptQuote={(quoteId) => setReview({ ...review, quoteId })}

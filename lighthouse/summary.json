@@ -1,0 +1,364 @@
+{
+  "environment": {
+    "date": "2026-11-04T22:13:45.313Z",
+    "lighthouseVersion": "13.6.0",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+    "benchmarkIndex": 1560.5,
+    "chrome": "C:\\Users\\Admin\\AppData\\Local\\ms-playwright\\chromium-1248\\chrome-win64\\chrome.exe",
+    "node": "v24.15.0",
+    "os": "Windows_NT 10.0.26200 (x64)",
+    "cpu": "AMD Ryzen 7 5700X3D 8-Core Processor           ",
+    "server": "vite preview (production build, mocks on, default scenario) at http://localhost:4174",
+    "runsPerPage": 3
+  },
+  "results": [
+    {
+      "report": "lighthouse/reports/inicio-mobile.report.html (execução 2)",
+      "page": "inicio",
+      "path": "/",
+      "profile": "mobile",
+      "runs": [
+        {
+          "scores": {
+            "performance": 77,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "LCP": 4553.8174,
+            "CLS": 0.01580013483134789,
+            "TBT": 314
+          },
+          "throttling": {
+            "rttMs": 150,
+            "throughputKbps": 1638.4,
+            "requestLatencyMs": 562.5,
+            "downloadThroughputKbps": 1474.5600000000002,
+            "uploadThroughputKbps": 675,
+            "cpuSlowdownMultiplier": 4
+          },
+          "formFactor": "mobile"
+        },
+        {
+          "scores": {
+            "performance": 74,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "LCP": 4613.2948,
+            "CLS": 0.01580013483134789,
+            "TBT": 391
+          },
+          "throttling": {
+            "rttMs": 150,
+            "throughputKbps": 1638.4,
+            "requestLatencyMs": 562.5,
+            "downloadThroughputKbps": 1474.5600000000002,
+            "uploadThroughputKbps": 675,
+            "cpuSlowdownMultiplier": 4
+          },
+          "formFactor": "mobile"
+        },
+        {
+          "scores": {
+            "performance": 71,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "LCP": 4702.630300000001,
+            "CLS": 0.01580013483134789,
+            "TBT": 488.5
+          },
+          "throttling": {
+            "rttMs": 150,
+            "throughputKbps": 1638.4,
+            "requestLatencyMs": 562.5,
+            "downloadThroughputKbps": 1474.5600000000002,
+            "uploadThroughputKbps": 675,
+            "cpuSlowdownMultiplier": 4
+          },
+          "formFactor": "mobile"
+        }
+      ],
+      "median": {
+        "scores": {
+          "performance": 74,
+          "accessibility": 100,
+          "best-practices": 100,
+          "seo": 100
+        },
+        "metrics": {
+          "LCP": 4613.2948,
+          "CLS": 0.01580013483134789,
+          "TBT": 391
+        }
+      }
+    },
+    {
+      "report": "lighthouse/reports/inicio-desktop.report.html (execução 1)",
+      "page": "inicio",
+      "path": "/",
+      "profile": "desktop",
+      "runs": [
+        {
+          "scores": {
+            "performance": 99,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "LCP": 1018.6159499999999,
+            "CLS": 0.001716619419292105,
+            "TBT": 0.9999999999998863
+          },
+          "throttling": {
+            "rttMs": 40,
+            "throughputKbps": 10240,
+            "requestLatencyMs": 0,
+            "downloadThroughputKbps": 0,
+            "uploadThroughputKbps": 0,
+            "cpuSlowdownMultiplier": 1
+          },
+          "formFactor": "desktop"
+        },
+        {
+          "scores": {
+            "performance": 99,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "LCP": 1010.6772000000001,
+            "CLS": 0.001716619419292105,
+            "TBT": 2
+          },
+          "throttling": {
+            "rttMs": 40,
+            "throughputKbps": 10240,
+            "requestLatencyMs": 0,
+            "downloadThroughputKbps": 0,
+            "uploadThroughputKbps": 0,
+            "cpuSlowdownMultiplier": 1
+          },
+          "formFactor": "desktop"
+        },
+        {
+          "scores": {
+            "performance": 99,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "LCP": 1011.3910000000001,
+            "CLS": 0.001716619419292105,
+            "TBT": 1
+          },
+          "throttling": {
+            "rttMs": 40,
+            "throughputKbps": 10240,
+            "requestLatencyMs": 0,
+            "downloadThroughputKbps": 0,
+            "uploadThroughputKbps": 0,
+            "cpuSlowdownMultiplier": 1
+          },
+          "formFactor": "desktop"
+        }
+      ],
+      "median": {
+        "scores": {
+          "performance": 99,
+          "accessibility": 100,
+          "best-practices": 100,
+          "seo": 100
+        },
+        "metrics": {
+          "LCP": 1011.3910000000001,
+          "CLS": 0.001716619419292105,
+          "TBT": 1
+        }
+      }
+    },
+    {
+      "report": "lighthouse/reports/detalhe-mobile.report.html (execução 1)",
+      "page": "detalhe",
+      "path": "/nfts/emerald-ape-042",
+      "profile": "mobile",
+      "runs": [
+        {
+          "scores": {
+            "performance": 72,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "LCP": 4731.367,
+            "CLS": 0,
+            "TBT": 437
+          },
+          "throttling": {
+            "rttMs": 150,
+            "throughputKbps": 1638.4,
+            "requestLatencyMs": 562.5,
+            "downloadThroughputKbps": 1474.5600000000002,
+            "uploadThroughputKbps": 675,
+            "cpuSlowdownMultiplier": 4
+          },
+          "formFactor": "mobile"
+        },
+        {
+          "scores": {
+            "performance": 72,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "LCP": 4730.056949999998,
+            "CLS": 0,
+            "TBT": 435.9999999999991
+          },
+          "throttling": {
+            "rttMs": 150,
+            "throughputKbps": 1638.4,
+            "requestLatencyMs": 562.5,
+            "downloadThroughputKbps": 1474.5600000000002,
+            "uploadThroughputKbps": 675,
+            "cpuSlowdownMultiplier": 4
+          },
+          "formFactor": "mobile"
+        },
+        {
+          "scores": {
+            "performance": 76,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "LCP": 4557.191199999999,
+            "CLS": 0,
+            "TBT": 349
+          },
+          "throttling": {
+            "rttMs": 150,
+            "throughputKbps": 1638.4,
+            "requestLatencyMs": 562.5,
+            "downloadThroughputKbps": 1474.5600000000002,
+            "uploadThroughputKbps": 675,
+            "cpuSlowdownMultiplier": 4
+          },
+          "formFactor": "mobile"
+        }
+      ],
+      "median": {
+        "scores": {
+          "performance": 72,
+          "accessibility": 100,
+          "best-practices": 100,
+          "seo": 100
+        },
+        "metrics": {
+          "LCP": 4730.056949999998,
+          "CLS": 0,
+          "TBT": 435.9999999999991
+        }
+      }
+    },
+    {
+      "report": "lighthouse/reports/detalhe-desktop.report.html (execução 2)",
+      "page": "detalhe",
+      "path": "/nfts/emerald-ape-042",
+      "profile": "desktop",
+      "runs": [
+        {
+          "scores": {
+            "performance": 99,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "LCP": 1003.1435500000001,
+            "CLS": 0.0002464504871241811,
+            "TBT": 0
+          },
+          "throttling": {
+            "rttMs": 40,
+            "throughputKbps": 10240,
+            "requestLatencyMs": 0,
+            "downloadThroughputKbps": 0,
+            "uploadThroughputKbps": 0,
+            "cpuSlowdownMultiplier": 1
+          },
+          "formFactor": "desktop"
+        },
+        {
+          "scores": {
+            "performance": 97,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "LCP": 1221.8941750000001,
+            "CLS": 0.006990048000601688,
+            "TBT": 18.5
+          },
+          "throttling": {
+            "rttMs": 40,
+            "throughputKbps": 10240,
+            "requestLatencyMs": 0,
+            "downloadThroughputKbps": 0,
+            "uploadThroughputKbps": 0,
+            "cpuSlowdownMultiplier": 1
+          },
+          "formFactor": "desktop"
+        },
+        {
+          "scores": {
+            "performance": 97,
+            "accessibility": 100,
+            "best-practices": 100,
+            "seo": 100
+          },
+          "metrics": {
+            "LCP": 1205.0726,
+            "CLS": 0.006990048000601688,
+            "TBT": 14
+          },
+          "throttling": {
+            "rttMs": 40,
+            "throughputKbps": 10240,
+            "requestLatencyMs": 0,
+            "downloadThroughputKbps": 0,
+            "uploadThroughputKbps": 0,
+            "cpuSlowdownMultiplier": 1
+          },
+          "formFactor": "desktop"
+        }
+      ],
+      "median": {
+        "scores": {
+          "performance": 97,
+          "accessibility": 100,
+          "best-practices": 100,
+          "seo": 100
+        },
+        "metrics": {
+          "LCP": 1205.0726,
+          "CLS": 0.006990048000601688,
+          "TBT": 14
+        }
+      }
+    }
+  ]
+}

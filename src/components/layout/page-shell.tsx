@@ -21,7 +21,8 @@ export function PageShell({
         <main
           id="conteudo"
           tabIndex={-1}
-          className="flex flex-col gap-4 focus:outline-none md:gap-24"
+          // Keeps the footer below the fold while data loads (no layout shift when content arrives)
+          className="flex min-h-dvh flex-col gap-4 focus:outline-none md:gap-24"
         >
           {children}
         </main>

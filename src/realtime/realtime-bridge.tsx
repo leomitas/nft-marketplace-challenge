@@ -55,16 +55,21 @@ export function RealtimeBridge() {
       })
       socket = current
       socketRef.current = current
+      let connectedBefore = false
       current.on('connect', () => {
         current.emit(REALTIME_EVENTS.sessionJoin, tokenStore.get())
         setStatus('online')
         document.documentElement.dataset.realtime = 'online'
-        // Changes made before (or while) the socket was down were not pushed: refetch what is
-        // on screen from REST, the source of truth
+        // Changes made while the socket was down were not pushed: refetch what is on screen
+        // from REST, the source of truth. On the first connection only orders are rechecked (a
+        // pending one may have settled between its GET and the session join); the rest was
+        // just loaded, refetching it would only double the initial requests.
         void queryClient.invalidateQueries({
           refetchType: 'active',
-          predicate: (query) => query.queryKey[0] !== 'session',
+          predicate: (query) =>
+            connectedBefore ? query.queryKey[0] !== 'session' : query.queryKey.includes('orders'),
         })
+        connectedBefore = true
       })
       current.on('disconnect', () => {
         setStatus('offline')

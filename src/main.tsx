@@ -1,47 +1,21 @@
-import { QueryClientProvider } from '@tanstack/react-query'
-import { createRouter, RouterProvider } from '@tanstack/react-router'
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { queryClient } from './lib/query-client'
-import { routeTree } from './routeTree.gen'
 import './index.css'
 
-function makeRouter() {
-  return createRouter({
-    routeTree,
-    context: { queryClient },
-    defaultPreload: 'intent',
-    // Preloaded data is owned by TanStack Query, so the router must not cache it separately
-    defaultPreloadStaleTime: 0,
-    scrollRestoration: true,
-  })
-}
+// There is no real backend, so mocks are on unless explicitly disabled with VITE_ENABLE_MOCKS=false.
+// The mock layer and the app are fetched in parallel (not one after the other) to shorten the
+// critical path; the app renders only once the worker intercepts requests.
+const mocks = import.meta.env.VITE_ENABLE_MOCKS === 'false' ? null : import('./mocks/browser')
+const app = import('./app')
 
-declare module '@tanstack/react-router' {
-  interface Register {
-    router: ReturnType<typeof makeRouter>
-  }
-}
-
-// There is no real backend, so mocks are on unless explicitly disabled with VITE_ENABLE_MOCKS=false
 async function enableMocking() {
-  if (import.meta.env.VITE_ENABLE_MOCKS === 'false') return
-  const { worker, applyMockControlsFromUrl } = await import('./mocks/browser')
+  if (!mocks) return
+  const { worker, applyMockControlsFromUrl } = await mocks
   applyMockControlsFromUrl()
   await worker.start({ onUnhandledRequest: 'bypass', quiet: import.meta.env.PROD })
   // Demo controls for the fake backend; loaded after first render, off the critical path
   window.setTimeout(() => void import('./mocks/dev-panel').then((m) => m.mountMockPanel()), 0)
 }
 
-// The router is created only after the mock controls are stripped from the URL, and rendering
-// waits for the worker so the first requests are already intercepted
-enableMocking().then(() => {
-  const router = makeRouter()
-  createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>
-    </StrictMode>,
-  )
+// The router is created only after the mock controls are stripped from the URL
+void Promise.all([enableMocking(), app]).then(([, { renderApp }]) => {
+  renderApp(document.getElementById('root')!)
 })

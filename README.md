@@ -4,11 +4,10 @@ Desafio técnico de front-end: marketplace de NFTs em React + TypeScript, com AP
 pagamentos simulados por MSW. Enunciado em [`docs/DESAFIO.md`](docs/DESAFIO.md); decisões técnicas em
 [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
-> Entrega em fatias verticais. Concluído até agora: **Início** (catálogo completo), **Detalhe do NFT**
-> (galeria, edições, quantidade, avaliações), **favoritos** com atualização otimista e **conta**
-> (cadastro, login, sessão, logout, expiração, rotas privadas) e **carrinho** (quantidades, cupom,
-> cotação da API, mudanças de preço/estoque, merge do visitante no login). Próximas fatias:
-> pagamento/confirmação, tempo real, perfil/carteiras, acessibilidade e Lighthouse.
+Deploy: https://nft-marketplace-challenge-two.vercel.app (build de demonstração com mocks).
+
+Telas: Início, Detalhe do NFT, Carrinho, Pagamento, Confirmação (`/pedidos/:id`), Login, Cadastro,
+Perfil e Carteiras — desktop e mobile. Tempo real via Socket.IO simulado no MSW.
 
 ## Requisitos
 
@@ -26,17 +25,18 @@ pnpm dev            # http://localhost:5173
 
 ## Comandos
 
-| Comando                 | O que faz                                                            |
-| ----------------------- | -------------------------------------------------------------------- |
-| `pnpm dev` / `dev:mock` | Desenvolvimento com mocks (MSW sempre ativo, ver abaixo)             |
-| `pnpm build`            | Typecheck + build de produção em `dist/`                             |
-| `pnpm preview`          | Serve o `dist/` em http://localhost:4173                             |
-| `pnpm typecheck`        | Verificação de tipos                                                 |
-| `pnpm lint`             | ESLint                                                               |
-| `pnpm format`           | Prettier                                                             |
-| `pnpm test:e2e`         | Playwright (build + preview, Chromium desktop 1440 e mobile Pixel 7) |
-| `pnpm test:e2e:report`  | Abre o relatório HTML do último run (traces das falhas incluídos)    |
-| `pnpm lighthouse`       | Build + Lighthouse CI (3 execuções)                                  |
+| Comando                       | O que faz                                                                                            |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `pnpm dev` / `dev:mock`       | Desenvolvimento com mocks (MSW sempre ativo, ver abaixo)                                             |
+| `pnpm build`                  | Typecheck + build de produção em `dist/`                                                             |
+| `pnpm preview`                | Serve o `dist/` em http://localhost:4173                                                             |
+| `pnpm typecheck`              | Verificação de tipos                                                                                 |
+| `pnpm lint`                   | ESLint                                                                                               |
+| `pnpm format`                 | Prettier                                                                                             |
+| `pnpm test:e2e`               | Playwright (build + preview, Chromium desktop 1440 e mobile Pixel 7)                                 |
+| `pnpm test:e2e:report`        | Abre o relatório HTML do último run (traces das falhas incluídos)                                    |
+| `pnpm test:e2e:update-visual` | Regera as baselines de regressão visual (do SO atual)                                                |
+| `pnpm lighthouse`             | Build + Lighthouse (início e detalhe, mobile e desktop, 3× cada, mediana em `lighthouse/summary.md`) |
 
 ## Variáveis de ambiente
 
@@ -93,8 +93,8 @@ controle que os testes: `POST /api/__mock/scenario/:id`, `POST /api/__mock/sessi
 
 - **Cupons:** `KURIO10` (10%), `LANCAMENTO` (0.05 ETH em compras acima de 0.5 ETH), `GENESIS20`
   (expirado) e qualquer outro código (inválido).
-- **Preço alterado / edição esgotada:** com itens no carrinho, mude o servidor simulado pelo console e
-  recarregue (o tempo real chega na fatia 5):
+- **Preço alterado / edição esgotada:** com itens no carrinho, mude o servidor simulado pelo console;
+  o carrinho atualiza sozinho via Socket.IO (ou use o painel Mocks):
   `fetch('/api/__mock/nfts/emerald-ape-042/price', { method: 'POST', body: JSON.stringify({ priceEth: '1.49' }) })`
   ou `.../stock` com `{ "editionId": "1-50", "available": 0 }`. O carrinho mostra o aviso e a ação.
 - **Carrinho do visitante no login:** adicione itens sem estar logado e entre; os itens vão para a conta.

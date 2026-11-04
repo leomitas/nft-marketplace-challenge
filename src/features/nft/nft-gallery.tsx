@@ -72,7 +72,7 @@ export function NftGallery({ images, name }: { images: GalleryImage[]; name: str
         ))}
       </div>
 
-      <div className="relative flex aspect-square w-full max-w-[444px] items-center justify-center self-start rounded-[6px] bg-surface-card p-4">
+      <div className="relative flex aspect-square w-[444px] max-w-full items-center justify-center self-start rounded-[6px] bg-surface-card p-4">
         <div className="size-full overflow-hidden rounded-3xl">
           <GalleryImg image={current} sizes="(min-width: 1024px) 404px, 40vw" priority />
         </div>
