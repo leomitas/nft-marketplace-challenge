@@ -25,7 +25,7 @@ async function settle(page: Page) {
 // Tolerance and animations come from playwright.config.ts (shared by every OS)
 const options = { fullPage: true } as const
 
-test.describe('Regressão visual', () => {
+test.describe('Regressão visual', { tag: '@visual' }, () => {
   test('início', async ({ page }) => {
     await openWithScenario(page, '/')
     await expect(page.locator('#catalogo article').first()).toBeVisible()

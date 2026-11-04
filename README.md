@@ -33,7 +33,8 @@ pnpm dev            # http://localhost:5173
 | `pnpm typecheck`              | Verificação de tipos                                                                                 |
 | `pnpm lint`                   | ESLint                                                                                               |
 | `pnpm format`                 | Prettier                                                                                             |
-| `pnpm test:e2e`               | Playwright (build + preview, Chromium desktop 1440 e mobile Pixel 7)                                 |
+| `pnpm test:e2e`               | Playwright sem os testes visuais (build + preview, Chromium desktop 1440 e mobile Pixel 7)           |
+| `pnpm test:e2e:visual`        | Só a regressão visual (baselines geradas no Windows, ver "Regressão visual")                         |
 | `pnpm test:e2e:report`        | Abre o relatório HTML do último run (traces das falhas incluídos)                                    |
 | `pnpm test:e2e:update-visual` | Regera as baselines de regressão visual (ver "Regressão visual")                                     |
 | `pnpm lighthouse`             | Build + Lighthouse (início e detalhe, mobile e desktop, 3× cada, mediana em `lighthouse/summary.md`) |
@@ -171,14 +172,21 @@ docs/figma/      tokens, especificação das telas e screenshots de referência
 
 ## Regressão visual
 
-`e2e/visual.spec.ts` compara início, detalhe, carrinho e pagamento (desktop e mobile) com um único
-conjunto de baselines em `e2e/__screenshots__/`, válido para qualquer SO: as fontes são locais
-(`@fontsource`) e a tolerância (`maxDiffPixelRatio: 0.03`, em `playwright.config.ts`) absorve diferenças
-de anti-aliasing entre Windows, macOS e Linux. Depois de uma mudança visual intencional:
+`e2e/visual.spec.ts` (tag `@visual`) compara início, detalhe, carrinho e pagamento (desktop e mobile)
+com as baselines em `e2e/__screenshots__/`. Ela roda **separada** da suíte E2E padrão:
+
+- `pnpm test:e2e` roda todos os testes **exceto** os visuais (`--grep-invert @visual`), então passa em
+  qualquer SO;
+- `pnpm test:e2e:visual` roda **só** os visuais (`--grep @visual`), com a mesma config.
+
+As baselines foram **geradas no Windows 11** (Chromium do Playwright). Há um único conjunto, sem sufixo
+de plataforma, e uma tolerância (`maxDiffPixelRatio: 0.03` em `playwright.config.ts`); as fontes são
+locais (`@fontsource`), mas o anti-aliasing de Linux/macOS pode passar dessa margem. Nesse caso, ou
+depois de uma mudança visual intencional, regere as baselines na sua máquina:
 
 ```bash
-pnpm test:e2e:update-visual   # regera as 8 imagens
-pnpm exec playwright test e2e/visual.spec.ts   # confere
+pnpm test:e2e:update-visual   # regera as 8 imagens (--grep @visual --update-snapshots)
+pnpm test:e2e:visual          # confere
 ```
 
 Revise as imagens alteradas no diff antes de commitar.

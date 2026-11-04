@@ -319,8 +319,9 @@ campos, ações laranja) e funcionam em uma coluna no mobile.
 - **Regressão visual** (`visual.spec.ts`): início, detalhe, carrinho e pagamento, página inteira, nos
   dois projetos, com fixtures determinísticas, animações desligadas e imagens forçadas a carregar.
   Um único conjunto de baselines (`e2e/__screenshots__/`, `snapshotPathTemplate` sem `{platform}`)
-  vale para todos os SOs: as fontes são locais e `maxDiffPixelRatio: 0.03` absorve o anti-aliasing.
-  Regerar com `pnpm test:e2e:update-visual`.
+  sem sufixo de SO; as fontes são locais e `maxDiffPixelRatio: 0.03` absorve parte do anti-aliasing.
+  Baselines geradas no Windows. Fora da suíte padrão: `pnpm test:e2e` usa `--grep-invert @visual` e
+  `pnpm test:e2e:visual` roda só elas; regerar com `pnpm test:e2e:update-visual`.
 - **Tempo**: o relógio não é congelado; os cenários sensíveis a tempo usam atrasos fixos do mock
   (liquidação em 2,5 s, timeout de 5 s na criação do pedido) e o disparo dos eventos é controlado
   pelos endpoints de controle. `page.clock` ficou de fora para não interferir no heartbeat do Socket.IO.
