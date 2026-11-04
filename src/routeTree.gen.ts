@@ -20,6 +20,7 @@ import { Route as AuthenticatedPagamentoRouteImport } from './routes/_authentica
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as NftsNftIdRouteImport } from './routes/nfts.$nftId'
 import { Route as AuthenticatedPedidosOrderIdRouteImport } from './routes/_authenticated/pedidos/$orderId'
+import { Route as AuthenticatedPedidosOrderIdTransacaoRouteImport } from './routes/_authenticated/pedidos/$orderId_.transacao'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +77,12 @@ const AuthenticatedPedidosOrderIdRoute =
     path: '/pedidos/$orderId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPedidosOrderIdTransacaoRoute =
+  AuthenticatedPedidosOrderIdTransacaoRouteImport.update({
+    id: '/pedidos/$orderId_/transacao',
+    path: '/pedidos/$orderId/transacao',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AuthenticatedPerfilRoute
   '/nfts/$nftId': typeof NftsNftIdRoute
   '/pedidos/$orderId': typeof AuthenticatedPedidosOrderIdRoute
+  '/pedidos/$orderId/transacao': typeof AuthenticatedPedidosOrderIdTransacaoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -100,6 +108,7 @@ export interface FileRoutesByTo {
   '/perfil': typeof AuthenticatedPerfilRoute
   '/nfts/$nftId': typeof NftsNftIdRoute
   '/pedidos/$orderId': typeof AuthenticatedPedidosOrderIdRoute
+  '/pedidos/$orderId/transacao': typeof AuthenticatedPedidosOrderIdTransacaoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -114,6 +123,7 @@ export interface FileRoutesById {
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/nfts/$nftId': typeof NftsNftIdRoute
   '/_authenticated/pedidos/$orderId': typeof AuthenticatedPedidosOrderIdRoute
+  '/_authenticated/pedidos/$orderId_/transacao': typeof AuthenticatedPedidosOrderIdTransacaoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/nfts/$nftId'
     | '/pedidos/$orderId'
+    | '/pedidos/$orderId/transacao'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/nfts/$nftId'
     | '/pedidos/$orderId'
+    | '/pedidos/$orderId/transacao'
   id:
     | '__root__'
     | '/'
@@ -153,6 +165,7 @@ export interface FileRouteTypes {
     | '/_authenticated/perfil'
     | '/nfts/$nftId'
     | '/_authenticated/pedidos/$orderId'
+    | '/_authenticated/pedidos/$orderId_/transacao'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -243,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPedidosOrderIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/pedidos/$orderId_/transacao': {
+      id: '/_authenticated/pedidos/$orderId_/transacao'
+      path: '/pedidos/$orderId/transacao'
+      fullPath: '/pedidos/$orderId/transacao'
+      preLoaderRoute: typeof AuthenticatedPedidosOrderIdTransacaoRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -252,6 +272,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPagamentoRoute: typeof AuthenticatedPagamentoRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
   AuthenticatedPedidosOrderIdRoute: typeof AuthenticatedPedidosOrderIdRoute
+  AuthenticatedPedidosOrderIdTransacaoRoute: typeof AuthenticatedPedidosOrderIdTransacaoRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -260,6 +281,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPagamentoRoute: AuthenticatedPagamentoRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
   AuthenticatedPedidosOrderIdRoute: AuthenticatedPedidosOrderIdRoute,
+  AuthenticatedPedidosOrderIdTransacaoRoute:
+    AuthenticatedPedidosOrderIdTransacaoRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

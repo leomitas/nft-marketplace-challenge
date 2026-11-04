@@ -8,6 +8,12 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: [['html', { open: 'never' }], ['list']],
+  // One baseline set for every OS (no {platform}): fonts are self-hosted, so only anti-aliasing
+  // and sub-pixel rendering differ between Windows/macOS/Linux; the tolerance absorbs that
+  snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}-{projectName}{ext}',
+  expect: {
+    toHaveScreenshot: { maxDiffPixelRatio: 0.03, threshold: 0.25, animations: 'disabled' },
+  },
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'retain-on-failure',

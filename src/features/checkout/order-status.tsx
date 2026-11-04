@@ -135,7 +135,6 @@ function Refused({ order }: { order: Order }) {
 function Receipt({ order }: { order: Order }) {
   const navigate = useNavigate()
   const network = NETWORKS[order.payment.network]
-  const explorer = order.payment.network === 'ethereum' ? 'Etherscan' : 'explorador'
   const meta = [
     { label: 'ID da transação', value: order.transaction ? shortHex(order.transaction.hash) : '—' },
     { label: 'Data', value: formatDate(order.updatedAt) },
@@ -248,15 +247,15 @@ function Receipt({ order }: { order: Order }) {
             conectada e registrada na rede.
           </p>
           {order.transaction && (
-            <a
-              href={order.transaction.explorerUrl}
-              target="_blank"
-              rel="noreferrer noopener"
+            // Figma says "Ver no Etherscan"; the hash is simulated, so it opens the app's own
+            // simulated explorer instead of a real one that would answer "not found"
+            <Link
+              to="/pedidos/$orderId/transacao"
+              params={{ orderId: order.id }}
               className="self-center rounded-[3px] bg-primary px-4 py-3 text-sm font-bold text-ink focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
-              Ver no {explorer}
-              <span className="sr-only"> (simulado, abre em nova aba)</span>
-            </a>
+              Ver no explorador (simulado)
+            </Link>
           )}
         </section>
       </article>

@@ -1,4 +1,3 @@
-import type { NetworkId } from '@/api/contracts/catalog'
 import type { Order } from '@/api/contracts/orders'
 import { db, type OrderRecord } from './db'
 import { lineId } from './cart-logic'
@@ -6,12 +5,6 @@ import { publishNftUpdated, publishOrderUpdated } from './realtime'
 
 /** Time the simulated network takes to confirm or refuse a payment. */
 export const SETTLE_DELAY_MS = 2500
-
-const EXPLORERS: Record<NetworkId, string> = {
-  ethereum: 'https://etherscan.io/tx/',
-  polygon: 'https://polygonscan.com/tx/',
-  solana: 'https://solscan.io/tx/',
-}
 
 function randomHex(bytes: number) {
   return [...crypto.getRandomValues(new Uint8Array(bytes))]
@@ -95,7 +88,8 @@ export function settleOrder(orderId: string, now = Date.now()) {
     }
 
     const hash = `0x${randomHex(32)}`
-    order.transaction = { hash, explorerUrl: `${EXPLORERS[order.payment.network]}${hash}` }
+    // The hash exists on no chain: the "explorer" is a page of the app showing this snapshot
+    order.transaction = { hash, explorerUrl: `/pedidos/${order.id}/transacao` }
     finish('confirmed', null)
   })
   const settled = db.state.orders.find((o) => o.id === orderId)

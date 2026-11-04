@@ -318,8 +318,9 @@ campos, ações laranja) e funcionam em uma coluna no mobile.
   (`html[data-realtime="online"]`) antes de mudar o servidor.
 - **Regressão visual** (`visual.spec.ts`): início, detalhe, carrinho e pagamento, página inteira, nos
   dois projetos, com fixtures determinísticas, animações desligadas e imagens forçadas a carregar.
-  As baselines (`e2e/visual.spec.ts-snapshots/`) foram geradas no Windows; em outro SO a renderização
-  de fontes muda, então gere as do SO com `pnpm test:e2e:update-visual`.
+  Um único conjunto de baselines (`e2e/__screenshots__/`, `snapshotPathTemplate` sem `{platform}`)
+  vale para todos os SOs: as fontes são locais e `maxDiffPixelRatio: 0.03` absorve o anti-aliasing.
+  Regerar com `pnpm test:e2e:update-visual`.
 - **Tempo**: o relógio não é congelado; os cenários sensíveis a tempo usam atrasos fixos do mock
   (liquidação em 2,5 s, timeout de 5 s na criação do pedido) e o disparo dos eventos é controlado
   pelos endpoints de controle. `page.clock` ficou de fora para não interferir no heartbeat do Socket.IO.
@@ -449,5 +450,7 @@ divisão do chunk do MSW por recurso.
   pagamento é enviado por "Confirmar e pagar".
 - **Confirmação**: o Figma desenha um modal sobre a página; aqui é uma página `/pedidos/:id` com o mesmo
   card (recarregável e com URL própria). No mobile, o mesmo card ocupa a largura. Estados pendente e
-  recusado seguem o mesmo card. "Ver no Etherscan" abre um link simulado.
+  recusado seguem o mesmo card. "Ver no Etherscan" virou "Ver no explorador (simulado)": abre
+  `/pedidos/:id/transacao`, uma página do app que mostra a transação a partir do snapshot do pedido
+  e avisa que ela não existe em nenhuma blockchain (um link real daria "não encontrado").
 - Ícones dos apps de carteira usam a letra inicial (como o "W" do frame mobile) em vez de logos de marca.

@@ -2,9 +2,9 @@ import { expect, test, type Page } from '@playwright/test'
 import { addToCartFromDetail, openWithScenario, startCheckout, USERS } from './support.ts'
 
 /**
- * Visual regression of the four Figma screens with deterministic fixtures. Baselines live next to
- * this file (`visual.spec.ts-snapshots/`) and are tied to the OS that generated them (fonts and
- * anti-aliasing differ between Windows and Linux): regenerate with `pnpm test:e2e:update-visual`.
+ * Visual regression of the four Figma screens with deterministic fixtures. A single baseline set
+ * (`e2e/__screenshots__/`) serves every OS, with a tolerance for font anti-aliasing; regenerate
+ * after an intended UI change with `pnpm test:e2e:update-visual`.
  */
 async function settle(page: Page) {
   await page.waitForLoadState('networkidle')
@@ -22,7 +22,8 @@ async function settle(page: Page) {
   })()`)
 }
 
-const options = { fullPage: true, animations: 'disabled', maxDiffPixelRatio: 0.01 } as const
+// Tolerance and animations come from playwright.config.ts (shared by every OS)
+const options = { fullPage: true } as const
 
 test.describe('Regressão visual', () => {
   test('início', async ({ page }) => {
