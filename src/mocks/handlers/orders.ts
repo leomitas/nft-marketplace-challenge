@@ -5,7 +5,14 @@ import { connectWalletSchema, type WalletConnection } from '@/api/contracts/wall
 import { computeQuote, emptyCart, toCart } from '../cart-logic'
 import { db, type OrderRecord } from '../db'
 import { applyBasePrice } from '../fixtures/nfts'
-import { newOrderId, SETTLE_DELAY_MS, settleDueOrders, toOrder } from '../order-logic'
+import {
+  newOrderId,
+  scheduleSettlement,
+  SETTLE_DELAY_MS,
+  settleDueOrders,
+  toOrder,
+} from '../order-logic'
+import { publishNftUpdated } from '../realtime'
 import { errorResponse, fireOnce, getScenario, simulateLatency } from '../scenarios'
 import { authenticate } from './auth'
 
@@ -27,6 +34,7 @@ function fieldErrors(issues: { path: PropertyKey[]; message: string }[]) {
 function applyCheckoutScenario(userId: string) {
   const first = db.state.carts[`user:${userId}`]?.lines[0]
   if (!first) return
+  const before = db.state.nfts.find((n) => n.id === first.nftId)?.version
   if (fireOnce('checkout-price-change')) {
     db.update((draft) => {
       const nft = draft.nfts.find((n) => n.id === first.nftId)
@@ -42,6 +50,9 @@ function applyCheckoutScenario(userId: string) {
         nft.version += 1
       }
     })
+  }
+  if (db.state.nfts.find((n) => n.id === first.nftId)?.version !== before) {
+    publishNftUpdated(first.nftId)
   }
 }
 
@@ -231,6 +242,7 @@ export const orderHandlers = [
     db.update((draft) => {
       draft.orders.push(record)
     })
+    scheduleSettlement(record.id)
 
     // The order exists, but this response is lost: only a retry with the same key recovers it
     if (fireOnce('order-timeout')) await delay('infinite')

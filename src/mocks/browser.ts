@@ -1,9 +1,12 @@
 import { setupWorker } from 'msw/browser'
 import { db } from './db'
 import { handlers } from './handlers'
+import { resumePendingSettlements } from './order-logic'
 import { isScenarioId, setScenario } from './scenarios'
 
 export const worker = setupWorker(...handlers)
+
+resumePendingSettlements()
 
 /**
  * Reads `?scenario=<id>` and `?reset=1` once at boot, applies them to the mock layer and

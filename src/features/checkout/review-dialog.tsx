@@ -1,4 +1,3 @@
-import { useNavigate } from '@tanstack/react-router'
 import { Dialog as DialogPrimitive } from 'radix-ui'
 import { ApiError } from '@/api/client'
 import type { Cart, Quote } from '@/api/contracts/cart'
@@ -41,7 +40,6 @@ export function ReviewDialog({
   onClose: () => void
   onWalletDisconnected: () => void
 }) {
-  const navigate = useNavigate()
   const order = useCreateOrder()
   const quoteChanged = quote.id !== payload.quoteId
   const blocked = !quote.purchasable || quoteChanged
@@ -58,8 +56,6 @@ export function ReviewDialog({
         network: payload.network,
       },
       {
-        onSuccess: (created) =>
-          void navigate({ to: '/pedidos/$orderId', params: { orderId: created.id } }),
         onError: (e) => {
           if (e instanceof ApiError && e.code === 'WALLET_NOT_CONNECTED') onWalletDisconnected()
         },

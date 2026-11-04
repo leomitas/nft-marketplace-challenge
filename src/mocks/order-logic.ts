@@ -2,6 +2,7 @@ import type { NetworkId } from '@/api/contracts/catalog'
 import type { Order } from '@/api/contracts/orders'
 import { db, type OrderRecord } from './db'
 import { lineId } from './cart-logic'
+import { publishNftUpdated, publishOrderUpdated } from './realtime'
 
 /** Time the simulated network takes to confirm or refuse a payment. */
 export const SETTLE_DELAY_MS = 2500
@@ -97,6 +98,11 @@ export function settleOrder(orderId: string, now = Date.now()) {
     order.transaction = { hash, explorerUrl: `${EXPLORERS[order.payment.network]}${hash}` }
     finish('confirmed', null)
   })
+  const settled = db.state.orders.find((o) => o.id === orderId)
+  if (settled?.status === 'confirmed') {
+    for (const nftId of new Set(settled.lines.map((l) => l.nftId))) publishNftUpdated(nftId)
+  }
+  publishOrderUpdated(orderId)
   return true
 }
 
@@ -104,5 +110,23 @@ export function settleOrder(orderId: string, now = Date.now()) {
 export function settleDueOrders(userId: string) {
   for (const order of db.state.orders) {
     if (order.userId === userId) settleOrder(order.id)
+  }
+}
+
+/**
+ * Settles the order when its time comes and pushes `order.updated`. If the page reloads before
+ * that, the timer is gone, but the next read of the order settles it lazily.
+ */
+export function scheduleSettlement(orderId: string) {
+  const order = db.state.orders.find((o) => o.id === orderId)
+  if (!order) return
+  const wait = Math.max(0, Date.parse(order.settleAt) - Date.now())
+  setTimeout(() => settleOrder(orderId), wait)
+}
+
+/** After a reload of the mock layer, pending orders get their settlement timers back. */
+export function resumePendingSettlements() {
+  for (const order of db.state.orders) {
+    if (order.status === 'pending') scheduleSettlement(order.id)
   }
 }

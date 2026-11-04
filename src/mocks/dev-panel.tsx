@@ -1,3 +1,4 @@
+import Big from 'big.js'
 import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { getScenario, SCENARIOS, type ScenarioId } from './scenarios'
@@ -7,6 +8,9 @@ import { getScenario, SCENARIOS, type ScenarioId } from './scenarios'
  * reset the data. It lives in its own React root and talks to the mock layer through the same
  * control endpoints Playwright uses — the app never imports it.
  */
+// Demo-only counter for the price button (the price itself lives in the mock db)
+let priceBumps = 0
+
 function MockPanel() {
   const [open, setOpen] = useState(false)
   const [scenario, setScenarioState] = useState<ScenarioId>(getScenario())
@@ -60,6 +64,38 @@ function MockPanel() {
           >
             Expirar sessão
           </button>
+          <button
+            type="button"
+            onClick={async () => {
+              const response = await fetch('/api/__mock/nfts/emerald-ape-042/price', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  priceEth: new Big('1.19').plus(new Big('0.1').times(++priceBumps)).toFixed(2),
+                }),
+              })
+              setStatus(response.ok ? 'Preço do Emerald Ape #042 alterado' : 'Falhou')
+            }}
+            className="rounded border border-primary px-2 py-1 text-text-accent"
+          >
+            Alterar preço (Emerald Ape #042)
+          </button>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => call('realtime/offline', 'Tempo real derrubado')}
+              className="rounded border border-primary px-2 py-1 text-text-accent"
+            >
+              Derrubar socket
+            </button>
+            <button
+              type="button"
+              onClick={() => call('realtime/online', 'Tempo real restaurado')}
+              className="rounded border border-primary px-2 py-1 text-text-accent"
+            >
+              Restaurar socket
+            </button>
+          </div>
           <button
             type="button"
             onClick={async () => {

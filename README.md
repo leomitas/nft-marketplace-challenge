@@ -40,10 +40,11 @@ pnpm dev            # http://localhost:5173
 
 ## Variáveis de ambiente
 
-| Variável            | Padrão | Descrição                                                             |
-| ------------------- | ------ | --------------------------------------------------------------------- |
-| `VITE_ENABLE_MOCKS` | ligado | Mocks MSW ficam ativos a menos que seja `false`. Não há backend real. |
-| `VITE_API_URL`      | `/api` | Base das chamadas REST (interceptadas pelo MSW).                      |
+| Variável            | Padrão                       | Descrição                                                             |
+| ------------------- | ---------------------------- | --------------------------------------------------------------------- |
+| `VITE_ENABLE_MOCKS` | ligado                       | Mocks MSW ficam ativos a menos que seja `false`. Não há backend real. |
+| `VITE_API_URL`      | `/api`                       | Base das chamadas REST (interceptadas pelo MSW).                      |
+| `VITE_REALTIME_URL` | `https://realtime.kurio.dev` | Socket.IO (interceptado pelo MSW; o host não existe).                 |
 
 Veja `.env.example`. O deploy na Vercel não precisa de nenhuma variável.
 
@@ -125,6 +126,15 @@ pendente por ~2,5 s e então é confirmado (recibo) ou recusado.
 - **Refresh com pedido pendente:** recarregue `/pedidos/:id`; o mesmo pedido é retomado.
 - **Sessão expirada no checkout:** **Mocks → Expirar sessão** e clique em qualquer ação; após o login
   você volta ao pagamento com o formulário preservado.
+
+### Tempo real
+
+O painel **Mocks** tem **Alterar preço (Emerald Ape #042)** e **Derrubar/Restaurar socket**. Com o
+detalhe do Emerald, o catálogo ou o carrinho aberto, altere o preço: a tela muda sem recarregar e o
+carrinho avisa. Para a queda com pedido pendente: confirme uma compra, derrube o socket logo em seguida,
+espere alguns segundos e restaure — o pedido é reconciliado via REST e mostra o recibo. Pelo console:
+`fetch('/api/__mock/realtime/offline', { method: 'POST' })`, `.../online` e
+`.../realtime/replay/emerald-ape-042` (reenvia o último evento duplicado e um mais antigo).
 
 ## Credenciais fictícias
 

@@ -216,6 +216,45 @@ Visitante que clica em favoritar vai para o login e volta ao mesmo NFT.
 | GET    | `/api/orders`               | `{ items: Order[] }` do usuário                                |
 | GET    | `/api/orders/:id`           | `Order`; 404 `NOT_FOUND`; 403 `FORBIDDEN`                      |
 
+## Tempo real (Socket.IO)
+
+- **Transporte**: `socket.io-client` real, conectado a `VITE_REALTIME_URL` (padrão
+  `https://realtime.kurio.dev`, endereço que só existe dentro do mock). O MSW intercepta o WebSocket
+  (`ws.link`) e o `@mswjs/socket.io-binding` fala o protocolo Socket.IO (handshake, heartbeat,
+  pacotes). O cliente usa `transports: ['websocket']`, porque o MSW não intercepta long-polling.
+- **Limitações do ambiente de mocks**: o binding (0.2) suporta só o namespace padrão e eventos de
+  texto (sem acks, sem binário). O "servidor" vive na própria aba: cada aba tem o seu, e um reload
+  recria as conexões. O `socket.io-client` é importado sob demanda, depois de o MSW instalar o
+  interceptador, porque o engine.io guarda a referência de `WebSocket` ao carregar o módulo.
+- **Eventos** (`src/api/contracts/realtime.ts`), todos com `eventId` estável (`<recurso>:<id>:v<versão>`),
+  `resource`, `id` e `version`:
+
+| Evento          | Payload                                         | Efeito no cliente                                                      |
+| --------------- | ----------------------------------------------- | ---------------------------------------------------------------------- |
+| `nft.updated`   | `{ summary: NftSummary, editionOptions }`       | Atualiza detalhe, listas e destaque no cache; refaz carrinho e cotação |
+| `order.updated` | `Order` completo + `userId` do dono             | Atualiza o pedido no cache (pendente → confirmado/recusado)            |
+| `session.join`  | cliente → servidor: token da sessão (ou `null`) | Vincula a conexão ao usuário; `order.updated` só vai para o dono       |
+
+- **Origem dos eventos**: toda mudança do servidor simulado gera o evento correspondente — controles
+  de preço/estoque, cenários de checkout, liquidação do pedido (que também emite `nft.updated` pela baixa
+  de estoque). REST e eventos leem o mesmo banco.
+- **Duplicados e antigos**: um filtro por conexão descarta `eventId` já visto e versões menores ou
+  iguais à última aplicada; além disso o cache só é sobrescrito se a versão do evento for maior que a
+  do dado em cache (um refetch REST mais novo nunca é regredido).
+- **Reconexão**: ao (re)conectar, todas as queries ativas (menos a sessão) são invalidadas e refeitas
+  via REST, recuperando o que foi perdido enquanto o socket estava fora. Um aviso "Tempo real
+  desconectado. Reconectando..." (`role=status`) aparece durante a queda. Tentativas de conexão sem
+  resposta expiram em 3 s e são refeitas (backoff 0,5–2 s).
+- **Pedido pendente**: não há polling; o `order.updated` leva o pedido ao estado final. Se o evento
+  se perde (socket fora, reload), a reconexão ou a nova leitura buscam o estado real — o mock liquida o
+  pedido de forma preguiçosa na leitura e reagenda os pendentes ao recarregar.
+- **Isolamento**: o servidor só envia `order.updated` às conexões vinculadas ao dono; o cliente
+  ainda descarta eventos cujo `userId` não é o usuário atual. Login, logout ou troca de usuário
+  reenviam `session.join` e zeram o filtro de eventos. Ao desmontar, listeners são removidos e o socket
+  é desconectado.
+- **Avisos acessíveis**: mudança de preço/estoque de um item do carrinho gera um toast (região
+  `aria-live`) e o aviso "Seu carrinho mudou" do carrinho/checkout.
+
 ## Mocks
 
 - **Ativação**: `VITE_ENABLE_MOCKS` (padrão ligado; só `false` desliga). Como não há backend real, o
