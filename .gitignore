@@ -34,3 +34,4 @@ dist-ssr
 /blob-report/
 /playwright/.cache/
 /.lighthouseci/
+/.playwright-mcp/

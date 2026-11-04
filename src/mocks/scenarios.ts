@@ -1,0 +1,92 @@
+import { delay, HttpResponse } from 'msw'
+
+/**
+ * Deterministic network scenarios. Select with `?scenario=<id>` (persisted until changed)
+ * and restore the default data with `?reset=1`. Same ids are used by Playwright.
+ */
+export const SCENARIOS = {
+  default: 'Sucesso (latência curta)',
+  empty: 'Catálogo vazio',
+  slow: 'Lento (2,5 s por requisição)',
+  'variable-latency': 'Latência variável (determinística)',
+  'out-of-order': 'Respostas fora de ordem',
+  'server-error': 'Erro 500 no catálogo',
+  'network-error': 'Falha de conexão no catálogo',
+  'flaky-catalog': 'Catálogo falha 2 vezes e o retry automático recupera',
+} as const
+export type ScenarioId = keyof typeof SCENARIOS
+
+const SCENARIO_KEY = 'kurio:mock-scenario'
+
+export function isScenarioId(value: unknown): value is ScenarioId {
+  return typeof value === 'string' && value in SCENARIOS
+}
+
+export function getScenario(): ScenarioId {
+  try {
+    const value = localStorage.getItem(SCENARIO_KEY)
+    return isScenarioId(value) ? value : 'default'
+  } catch {
+    return 'default'
+  }
+}
+
+export function setScenario(id: ScenarioId) {
+  try {
+    if (id === 'default') localStorage.removeItem(SCENARIO_KEY)
+    else localStorage.setItem(SCENARIO_KEY, id)
+  } catch {
+    // Storage unavailable: scenario stays default
+  }
+  requestCounter = 0
+  flakyFailures = 0
+}
+
+let requestCounter = 0
+let flakyFailures = 0
+
+// Fixed sequence instead of Math.random, so "variable" latency is reproducible
+const VARIABLE_DELAYS = [300, 1400, 600, 2200, 150, 900]
+
+/** Latency applied to every mocked request according to the active scenario. */
+export async function simulateLatency() {
+  const n = requestCounter++
+  switch (getScenario()) {
+    case 'slow':
+      return delay(2500)
+    case 'variable-latency':
+      return delay(VARIABLE_DELAYS[n % VARIABLE_DELAYS.length])
+    case 'out-of-order':
+      // Older requests answer after newer ones: 1st takes 2s, 2nd 200ms, 3rd 2s...
+      return delay(n % 2 === 0 ? 2000 : 200)
+    default:
+      return delay(120)
+  }
+}
+
+/** Failure injected into catalog reads, or undefined when the request should succeed. */
+export function catalogFailure() {
+  switch (getScenario()) {
+    case 'server-error':
+      return errorResponse(500, 'INTERNAL', 'Erro interno ao carregar o catálogo.')
+    case 'network-error':
+      return HttpResponse.error()
+    case 'flaky-catalog':
+      // Two transient 503s: the client's automatic retries (2) recover without user action
+      if (flakyFailures++ < 2) {
+        return errorResponse(503, 'UNAVAILABLE', 'Serviço temporariamente indisponível.')
+      }
+      return undefined
+    default:
+      return undefined
+  }
+}
+
+export function errorResponse(
+  status: number,
+  code: string,
+  message: string,
+  fields?: Record<string, string>,
+) {
+  return HttpResponse.json({ error: { code, message, fields } }, { status })
+}

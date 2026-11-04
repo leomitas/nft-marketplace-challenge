@@ -24,7 +24,11 @@ export default defineConfig([
     ],
     languageOptions: { globals: globals.browser },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      // Leading underscore marks values dropped on purpose (e.g. omitting fields via destructuring)
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
     },
   },
   {
