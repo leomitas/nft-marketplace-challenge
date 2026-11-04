@@ -20,3 +20,8 @@ export function ethToHundredths(value: EthAmount, round: 'down' | 'up' = 'down')
 export function hundredthsToEth(value: number): EthAmount {
   return new Big(value).div(100).toFixed(ETH_DECIMALS)
 }
+
+/** Unit price × integer quantity, exact. */
+export function multiplyEth(value: EthAmount, quantity: number): EthAmount {
+  return new Big(value).times(quantity).toFixed(ETH_DECIMALS)
+}

@@ -1,6 +1,6 @@
 # Arquitetura
 
-Documento vivo: cada fatia acrescenta suas decisões. Estado atual: **Início + detalhe mínimo**.
+Documento vivo: cada fatia acrescenta suas decisões. Estado atual: **Início, Detalhe do NFT, favoritos e conta/sessão**.
 
 ## Stack e versões relevantes
 
@@ -70,12 +70,20 @@ exemplo e a implementação mostra dados coerentes com a listagem.
 
 ## Contratos REST (até agora)
 
-| Método | Rota                 | Resposta                                                               |
-| ------ | -------------------- | ---------------------------------------------------------------------- |
-| GET    | `/api/nfts`          | `CatalogPage` — `items`, `page`, `pageSize` (9), `total`, `totalPages` |
-| GET    | `/api/nfts/facets`   | `CatalogFacets` — contagens por coleção/rede e faixa de preço          |
-| GET    | `/api/nfts/featured` | `{ spotlight: NftSummary }`                                            |
-| GET    | `/api/nfts/:id`      | `NftDetail` ou 404 `NOT_FOUND`                                         |
+| Método | Rota                       | Resposta                                                                        |
+| ------ | -------------------------- | ------------------------------------------------------------------------------- |
+| GET    | `/api/nfts`                | `CatalogPage` — `items`, `page`, `pageSize` (9), `total`, `totalPages`          |
+| GET    | `/api/nfts/facets`         | `CatalogFacets` — contagens por coleção/rede e faixa de preço                   |
+| GET    | `/api/nfts/featured`       | `{ spotlight: NftSummary }`                                                     |
+| GET    | `/api/nfts/:id`            | `NftDetail` ou 404 `NOT_FOUND`                                                  |
+| GET    | `/api/nfts/:id/reviews`    | `{ items: Review[] }` (carregado ao abrir a aba)                                |
+| POST   | `/api/auth/register`       | 201 `{ token, user, expiresAt }`; 422 `VALIDATION`; 409 `CONFLICT` com `fields` |
+| POST   | `/api/auth/login`          | `{ token, user, expiresAt }`; 401 `INVALID_CREDENTIALS`                         |
+| GET    | `/api/auth/session`        | `{ user, expiresAt }`; 401 `UNAUTHENTICATED` ou `SESSION_EXPIRED`               |
+| POST   | `/api/auth/logout`         | 204                                                                             |
+| GET    | `/api/me/favorites`        | `{ items: NftSummary[] }` (privado)                                             |
+| PUT    | `/api/me/favorites/:nftId` | `{ nftId, favorited: true }` (idempotente)                                      |
+| DELETE | `/api/me/favorites/:nftId` | `{ nftId, favorited: false }` (idempotente)                                     |
 
 Query de `/api/nfts`: `q`, `collections` (repetido), `networks` (repetido), `minPrice`, `maxPrice`
 (strings decimais), `sort` (`recent|price-asc|price-desc|name`), `tab` (`all|new|trending`), `page`,
@@ -83,8 +91,47 @@ Query de `/api/nfts`: `q`, `collections` (repetido), `networks` (repetido), `min
 
 Formato de erro em todas as rotas: `{ "error": { "code", "message", "fields?" } }`.
 
+Rotas privadas exigem `Authorization: Bearer <token>`.
+
+**Edições**: cada NFT é vendido em 4 tiers (`1-1`, `1-10`, `1-50`, `open`), cada um com `priceEth`,
+`supply` e `available` próprios (`NftDetail.editionOptions`). O preço do catálogo é o do tier 1/50 (o
+selecionado no Figma). `NftSummary.editions` traz os totais somados de todos os tiers; `available === 0`
+significa esgotado. `maxPerOrder` (5) limita a quantidade por pedido, além do estoque.
+
 `NftSummary` já traz `version` (inteiro incrementado a cada mudança), usado na fatia de tempo real para
 descartar eventos antigos.
+
+## Sessão e autenticação
+
+- **Token opaco** gerado pelo mock (`crypto.randomUUID`), guardado em `localStorage` (`kurio:auth-token`)
+  e enviado pelo interceptor do Axios. É o único dado de auth no navegador: usuário e expiração sempre
+  vêm de `GET /auth/session`. TTL de 30 min.
+- **Senhas** nunca são armazenadas em claro: o mock guarda `salt` + SHA-256 (WebCrypto). Login com e-mail
+  inexistente ou senha errada devolve a mesma mensagem (sem enumeração de contas).
+- **Sessão recuperável após refresh**: `sessionQuery` (`['session']`, `staleTime: Infinity`) valida o
+  token salvo no boot. Um token que o servidor recusa vira "visitante" em silêncio (header
+  `X-Session-Probe`), sem redirecionar quem está numa página pública.
+- **Rotas privadas** (`/_authenticated`: `/favoritos`, `/perfil`, e depois checkout/carteiras): o
+  `beforeLoad` revalida a sessão no servidor a cada navegação real (`staleTime: 0`; preload por hover
+  reaproveita por 10 s). Sem sessão → `/login?redirect=<href completo>`. Se havia sessão (ou o token
+  salvo foi recusado como expirado no boot), vai junto `reason=expired` e o login mostra o aviso.
+- **Expiração durante uma ação**: qualquer chamada autenticada que receba 401 `SESSION_EXPIRED` ou
+  `UNAUTHENTICATED` dispara o `SessionWatcher` (registrado no cliente Axios): encerra a sessão local,
+  avisa e navega para o login preservando a URL atual. Só a primeira falha simultânea é tratada.
+- **`redirect` seguro**: só caminhos internos (`/...`, nunca `//...`) são aceitos (sem open redirect).
+- **Isolamento por usuário**: todo dado privado usa query key `['me', userId, ...]`. Login, logout,
+  expiração e troca de usuário removem `['me']` inteiro e reescrevem `['session']`, então nenhum cache
+  de um usuário aparece para outro. O teste "troca de usuário" cobre isso.
+- **Fechar o modal de login** volta à página anterior (ou à Início em acesso direto). Não usa o
+  `redirect`, porque ele pode ser uma página privada que mandaria de volta ao login.
+
+## Favoritos (atualização otimista)
+
+`useToggleFavorite`: `onMutate` cancela as queries de favoritos, guarda o snapshot e aplica a mudança no
+cache; `onError` restaura o snapshot e mostra um toast (`aria-live`); `onSettled` invalida para
+reconciliar com o servidor. Mutations do mesmo NFT compartilham um `scope`, então cliques rápidos
+executam em sequência e não deixam o cache inconsistente. PUT/DELETE são idempotentes no mock.
+Visitante que clica em favoritar vai para o login e volta ao mesmo NFT.
 
 ## Mocks
 
@@ -98,6 +145,11 @@ descartar eventos antigos.
   variadas, para exercitar filtros, paginação e as próximas fatias.
 - **Cenários** (`src/mocks/scenarios.ts`): latência e falhas determinísticas (sem `Math.random`).
   Lista e uso no README. Os testes usam os mesmos ids.
+- **Controles** (`src/mocks/handlers/control.ts`): `POST /api/__mock/scenario/:id`,
+  `/sessions/expire` e `/reset`. Usados pelo painel de mocks (raiz React própria, carregada depois do
+  primeiro render e oculta em navegadores automatizados) e pelos testes.
+- **Usuários** (`fixtures/users.ts`): Ana (2 favoritos) e Bruno, com hashes pré-calculados.
+- **Avaliações** geradas por NFT com PRNG determinístico; a média é calculada a partir delas.
 - **Router criado depois dos controles de mock**: `?scenario`/`?reset` são removidos da URL antes de o
   router ler a localização, evitando uma navegação extra que abortava a primeira requisição.
 
@@ -106,8 +158,9 @@ descartar eventos antigos.
 - `pnpm test:e2e` faz o build de produção e roda contra o `preview`, igual ao deploy.
 - Projetos: `desktop` (Chromium 1440×900) e `mobile` (Pixel 7).
 - Cada teste tem contexto próprio (localStorage vazio) e abre com `?reset=1&scenario=<id>`.
-- A troca de cenário no meio de um teste escreve na chave do mock (`kurio:mock-scenario`), a mesma usada
-  por `?scenario=`. A UI nunca é manipulada diretamente.
+- A troca de cenário e a expiração da sessão no meio de um teste usam os endpoints de controle do mock
+  (ou a chave `kurio:mock-scenario`, a mesma usada por `?scenario=`). A UI nunca é manipulada
+  diretamente.
 - Traces e screenshots só em falha; relatório HTML em `playwright-report/`.
 
 ## UX, acessibilidade e desvios do Figma
@@ -121,8 +174,7 @@ descartar eventos antigos.
   sociais, botão central de scan no mobile): aparecem como no layout, mas sem link, com `title` e texto
   para leitores de tela "(disponível em breve)". A newsletter valida o e-mail e informa que não está
   disponível, sem simular sucesso.
-- **Carrinho, Entrar, Favoritos e Perfil** no header/tab bar ficam visivelmente indisponíveis até as
-  fatias correspondentes.
+- **Carrinho e Comprar** ficam visivelmente indisponíveis até a fatia do carrinho.
 - **Checkbox dos filtros**: o Figma indica seleção só pela cor; foi adicionado um marcador com ✓
   (estado não depende só de cor). O input nativo fica acessível (`sr-only`) com foco visível.
 - **Preço anterior** aparece riscado (o Figma usa só cor) e tem rótulo "Preço anterior" para leitores
@@ -137,5 +189,37 @@ descartar eventos antigos.
   a arte do hero mobile encolhe e o título pode quebrar em 3 linhas.
 - **Skeleton com shimmer** preserva as dimensões dos cards (sem layout shift) e vira bloco estático com
   `prefers-reduced-motion`.
-- **Favorito no card mobile**: o frame mostra um coração no card; ele chega com a fatia de favoritos
-  (requer login).
+- **Favorito no card mobile**: coração do frame mobile, acima do link do card. No desktop o Figma não
+  mostra o coração no card; favoritar fica no detalhe.
+
+### Detalhe do NFT
+
+- **Galeria**: o Figma repete a mesma arte nas 4 miniaturas. Aqui são 4 vistas da mesma obra (completa e
+  três aproximações por `object-position` + `scale`), cada uma com `alt` próprio. A lupa abre a imagem
+  num diálogo (foco preso e devolvido).
+- **Edições** são radios nativos (setas do teclado, um único tab stop) estilizados como os chips; tiers
+  esgotados ficam desabilitados e riscados. A edição escolhida vai para a URL (`?edition=`). Cada
+  seletor (desktop e mobile coexistem no DOM) tem nome de grupo próprio.
+- **Quantidade**: inteiro entre 1 e `min(estoque do tier, maxPerOrder)`. O motivo do limite aparece ao
+  lado do botão "+" desabilitado.
+- **Preço**: o desktop mostra o preço unitário do tier; a barra de compra mobile mostra o total
+  (unitário × quantidade, com `big.js`). A cotação oficial vem da API no checkout.
+- **Compartilhar** usa links reais (LinkedIn, e-mail, X) em nova aba.
+- **"Mais desta coleção"**: carrossel com scroll-snap; os pontos refletem e controlam a posição.
+- **Mobile**: o frame não tem tab bar (tem barra de compra fixa); a rota usa `staticData.hideTabBar`.
+- **Estado "favoritado"**: o Figma só desenha o coração vazado; o preenchido usa a forma do coração da
+  tab bar, e o botão desktop troca o texto para "Favoritado" (`aria-pressed`).
+
+### Login e cadastro
+
+- **Desktop**: modal de 500 px sobre a página (como nos frames, com faixa `primary` na base);
+  **mobile**: tela cheia com a marca grande. O mesmo Radix Dialog cobre os dois, com foco inicial no
+  primeiro campo.
+- Os campos do layout só têm placeholder; cada um tem `<label>` acessível (`sr-only`), erro associado
+  via `aria-describedby` + `aria-invalid` e foco no primeiro campo inválido.
+- **Mostrar senha**: o Figma desenha só o olho riscado; o estado "visível" usa um olho aberto.
+- **Login social e "Esqueceu a senha?"** estão fora do escopo: aparecem desabilitados/indisponíveis.
+- **Header logado**: o layout não tem esse estado. O botão "Entrar" vira o primeiro nome do usuário, com
+  menu (Perfil, Favoritos, Sair). `/perfil` é provisório até a fatia de perfil.
+- **Toasts** (Sonner) ficam embaixo, acima da tab bar e da barra de compra no mobile, para não cobrir
+  ações.

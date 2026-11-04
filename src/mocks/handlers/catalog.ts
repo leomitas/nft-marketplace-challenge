@@ -9,21 +9,16 @@ import {
   type CatalogQuery,
   type Featured,
   type NftDetail,
-  type NftSummary,
+  type Review,
 } from '@/api/contracts/catalog'
 import { db } from '../db'
-import { FIXTURE_NOW, SPOTLIGHT_NFT_ID, type NftRecord } from '../fixtures/nfts'
+import { FIXTURE_NOW, SPOTLIGHT_NFT_ID, toSummary, type NftRecord } from '../fixtures/nfts'
+import { averageRating, reviewsFor } from '../fixtures/reviews'
 import { catalogFailure, errorResponse, getScenario, simulateLatency } from '../scenarios'
 
 const DEFAULT_PAGE_SIZE = 9
 const NEW_RELEASE_WINDOW_MS = 14 * 24 * 3_600_000
 const TRENDING_MIN_SCORE = 70
-
-export function toSummary(record: NftRecord): NftSummary {
-  // Strip mock-only fields so responses match the public contract exactly
-  const { trendingScore: _t, description: _d, creator: _c, ...summary } = record
-  return summary
-}
 
 function readQuery(url: URL) {
   const params = url.searchParams
@@ -138,7 +133,25 @@ export const catalogHandlers = [
     await simulateLatency()
     const record = db.state.nfts.find((nft) => nft.id === params.id)
     if (!record) return errorResponse(404, 'NOT_FOUND', 'NFT não encontrado.')
-    const { trendingScore: _t, ...detail } = record
-    return HttpResponse.json<NftDetail>(detail)
+    return HttpResponse.json<NftDetail>(toDetail(record))
+  }),
+
+  http.get('/api/nfts/:id/reviews', async ({ params }) => {
+    await simulateLatency()
+    const record = db.state.nfts.find((nft) => nft.id === params.id)
+    if (!record) return errorResponse(404, 'NOT_FOUND', 'NFT não encontrado.')
+    return HttpResponse.json<{ items: Review[] }>({
+      items: reviewsFor(record.id, record.rating.count),
+    })
   }),
 ]
+
+export function toDetail(record: NftRecord): NftDetail {
+  const { trendingScore: _t, art: _a, ...rest } = record
+  const reviews = reviewsFor(record.id, record.rating.count)
+  return {
+    ...rest,
+    editions: toSummary(record).editions,
+    rating: { average: averageRating(reviews), count: reviews.length },
+  }
+}

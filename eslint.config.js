@@ -32,8 +32,9 @@ export default defineConfig([
     },
   },
   {
-    // Route files export `Route`, and shadcn files export variants next to components
-    files: ['src/routes/**/*.tsx', 'src/components/ui/**/*.tsx'],
+    // Route files export `Route`, shadcn files export variants next to components, and the
+    // mock dev panel mounts itself (it is not hot-reloaded app code)
+    files: ['src/routes/**/*.tsx', 'src/components/ui/**/*.tsx', 'src/mocks/**/*.tsx'],
     rules: { 'react-refresh/only-export-components': 'off' },
   },
 ])

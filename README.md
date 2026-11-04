@@ -4,9 +4,10 @@ Desafio técnico de front-end: marketplace de NFTs em React + TypeScript, com AP
 pagamentos simulados por MSW. Enunciado em [`docs/DESAFIO.md`](docs/DESAFIO.md); decisões técnicas em
 [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
-> Entrega em fatias verticais. Concluído até agora: **Início** (catálogo completo) e um detalhe mínimo
-> do NFT. Próximas fatias: detalhe + favoritos + auth, carrinho, pagamento/confirmação, tempo real,
-> perfil/carteiras, acessibilidade e Lighthouse.
+> Entrega em fatias verticais. Concluído até agora: **Início** (catálogo completo), **Detalhe do NFT**
+> (galeria, edições, quantidade, avaliações), **favoritos** com atualização otimista e **conta**
+> (cadastro, login, sessão, logout, expiração, rotas privadas). Próximas fatias: carrinho,
+> pagamento/confirmação, tempo real, perfil/carteiras, acessibilidade e Lighthouse.
 
 ## Requisitos
 
@@ -61,8 +62,15 @@ removidos da URL logo após o carregamento.
 | `/?scenario=server-error`     | Listagem do catálogo responde 500                                 |
 | `/?scenario=network-error`    | Listagem do catálogo falha por conexão                            |
 | `/?scenario=flaky-catalog`    | Listagem falha 2× com 503; o retry automático recupera            |
+| `/?scenario=favorites-error`  | Favoritar/desfavoritar responde 500 (rollback da UI otimista)     |
+| `/?scenario=auth-unavailable` | Login e cadastro respondem 503                                    |
 
 Os parâmetros podem ser combinados: `/?reset=1&scenario=slow`.
+
+**Painel de mocks:** no canto inferior esquerdo há um botão **Mocks** (só existe com MSW ativo) para trocar
+o cenário, **expirar a sessão** no servidor simulado e resetar os dados. Ele usa os mesmos endpoints de
+controle que os testes: `POST /api/__mock/scenario/:id`, `POST /api/__mock/sessions/expire` e
+`POST /api/__mock/reset`.
 
 ### Como reproduzir os fluxos de falha (Início)
 
@@ -74,9 +82,25 @@ Os parâmetros podem ser combinados: `/?reset=1&scenario=slow`.
 - **Vazio:** `/?scenario=empty`, ou uma busca sem resultado (`/?q=zzz`).
 - **NFT inexistente:** `/nfts/qualquer-coisa`.
 
+### Conta, sessão e favoritos
+
+- **Conflito de cadastro:** em `/cadastro`, use o e-mail `ana@kurio.dev` (já existe) ou o usuário `ana.souza`.
+- **Sessão expirada:** entre, abra o painel **Mocks → Expirar sessão** e navegue para `/favoritos` ou
+  `/perfil` (ou clique em favoritar). O app leva ao login com o aviso de sessão expirada e, após entrar,
+  volta exatamente para a página anterior.
+- **Rollback de favorito:** entre, selecione o cenário `favorites-error` e clique em favoritar: o coração
+  muda na hora e volta ao estado anterior com uma mensagem.
+- **Troca de usuário:** entre como Ana (tem 2 favoritos), saia e entre como Bruno: nenhum dado da Ana
+  aparece.
+
 ## Credenciais fictícias
 
-Ainda não há autenticação (chega na próxima fatia).
+| Usuário    | E-mail            | Senha        | Observação             |
+| ---------- | ----------------- | ------------ | ---------------------- |
+| Ana Souza  | `ana@kurio.dev`   | `Kurio@2026` | começa com 2 favoritos |
+| Bruno Lima | `bruno@kurio.dev` | `Kurio@2026` | sem favoritos          |
+
+As senhas existem no mock apenas como hash SHA-256 com salt; novas contas podem ser criadas em `/cadastro`.
 
 ## Estrutura
 

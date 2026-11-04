@@ -29,6 +29,8 @@ async function enableMocking() {
   const { worker, applyMockControlsFromUrl } = await import('./mocks/browser')
   applyMockControlsFromUrl()
   await worker.start({ onUnhandledRequest: 'bypass', quiet: import.meta.env.PROD })
+  // Demo controls for the fake backend; loaded after first render, off the critical path
+  window.setTimeout(() => void import('./mocks/dev-panel').then((m) => m.mountMockPanel()), 0)
 }
 
 // The router is created only after the mock controls are stripped from the URL, and rendering
