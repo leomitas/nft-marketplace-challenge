@@ -1,13 +1,16 @@
 import type { EditionId } from '@/api/contracts/catalog'
 import { createNftFixtures, type NftRecord } from './fixtures/nfts'
+import type { Order } from '@/api/contracts/orders'
+import type { WalletConnection } from '@/api/contracts/wallets'
 import { createFavoriteFixtures, createUserFixtures, type UserRecord } from './fixtures/users'
+import { createWalletFixtures, type WalletRecord } from './fixtures/wallets'
 
 /**
  * In-memory state of the fake backend, persisted to localStorage so refreshes keep
  * mutations. Bump DB_VERSION whenever the shape or fixtures change: old data is discarded.
  */
 const DB_KEY = 'kurio:mock-db'
-const DB_VERSION = 3
+const DB_VERSION = 4
 
 export type SessionRecord = { token: string; userId: string; expiresAt: string }
 
@@ -26,6 +29,16 @@ export type CartRecord = {
   updatedAt: string
 }
 
+export type OrderRecord = Order & {
+  userId: string
+  /** Idempotency key and fingerprint of the request that created the order. */
+  idempotencyKey: string
+  fingerprint: string
+  /** When the simulated payment settles, and how (decided by the scenario at creation). */
+  settleAt: string
+  outcome: 'confirmed' | 'refused'
+}
+
 export type DbState = {
   version: typeof DB_VERSION
   nfts: NftRecord[]
@@ -35,6 +48,10 @@ export type DbState = {
   favorites: Record<string, string[]>
   /** `user:<id>` or `guest:<cart id>` -> cart */
   carts: Record<string, CartRecord>
+  wallets: WalletRecord[]
+  /** userId -> simulated wallet connection used by checkout */
+  connections: Record<string, WalletConnection>
+  orders: OrderRecord[]
 }
 
 function seed(): DbState {
@@ -45,6 +62,9 @@ function seed(): DbState {
     sessions: [],
     favorites: createFavoriteFixtures(),
     carts: {},
+    wallets: createWalletFixtures(),
+    connections: {},
+    orders: [],
   }
 }
 

@@ -15,6 +15,11 @@ export const SCENARIOS = {
   'flaky-catalog': 'Catálogo falha 2 vezes e o retry automático recupera',
   'favorites-error': 'Salvar/remover favorito responde 500 (rollback)',
   'auth-unavailable': 'Login e cadastro respondem 503',
+  'wallet-rejected': 'Carteira recusa a conexão',
+  'payment-refused': 'Pagamento recusado pela rede',
+  'order-timeout': 'Pedido criado, mas a 1ª resposta não chega (timeout)',
+  'checkout-price-change': 'Preço muda no momento de confirmar a compra',
+  'checkout-sold-out': 'Edição esgota no momento de confirmar a compra',
 } as const
 export type ScenarioId = keyof typeof SCENARIOS
 
@@ -42,10 +47,20 @@ export function setScenario(id: ScenarioId) {
   }
   requestCounter = 0
   flakyFailures = 0
+  oneShotFired.clear()
 }
 
 let requestCounter = 0
 let flakyFailures = 0
+// Checkout scenarios act once (the first order attempt), so the recovery path can be shown
+const oneShotFired = new Set<ScenarioId>()
+
+/** True the first time it is called while `id` is active; false afterwards. */
+export function fireOnce(id: ScenarioId) {
+  if (getScenario() !== id || oneShotFired.has(id)) return false
+  oneShotFired.add(id)
+  return true
+}
 
 // Fixed sequence instead of Math.random, so "variable" latency is reproducible
 const VARIABLE_DELAYS = [300, 1400, 600, 2200, 150, 900]

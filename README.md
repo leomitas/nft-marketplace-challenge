@@ -52,19 +52,24 @@ Veja `.env.example`. O deploy na Vercel não precisa de nenhuma variável.
 Os cenários são escolhidos pela URL e ficam salvos no navegador até serem trocados. Os parâmetros são
 removidos da URL logo após o carregamento.
 
-| URL                           | Efeito                                                            |
-| ----------------------------- | ----------------------------------------------------------------- |
-| `/?reset=1`                   | Restaura os dados iniciais **e** o cenário padrão                 |
-| `/?scenario=default`          | Sucesso, latência curta (120 ms)                                  |
-| `/?scenario=empty`            | Catálogo vazio                                                    |
-| `/?scenario=slow`             | Toda requisição leva 2,5 s (skeletons visíveis)                   |
-| `/?scenario=variable-latency` | Latências variadas em sequência fixa (reprodutível)               |
-| `/?scenario=out-of-order`     | Requisições alternam 2 s / 200 ms: respostas chegam fora de ordem |
-| `/?scenario=server-error`     | Listagem do catálogo responde 500                                 |
-| `/?scenario=network-error`    | Listagem do catálogo falha por conexão                            |
-| `/?scenario=flaky-catalog`    | Listagem falha 2× com 503; o retry automático recupera            |
-| `/?scenario=favorites-error`  | Favoritar/desfavoritar responde 500 (rollback da UI otimista)     |
-| `/?scenario=auth-unavailable` | Login e cadastro respondem 503                                    |
+| URL                                | Efeito                                                            |
+| ---------------------------------- | ----------------------------------------------------------------- |
+| `/?reset=1`                        | Restaura os dados iniciais **e** o cenário padrão                 |
+| `/?scenario=default`               | Sucesso, latência curta (120 ms)                                  |
+| `/?scenario=empty`                 | Catálogo vazio                                                    |
+| `/?scenario=slow`                  | Toda requisição leva 2,5 s (skeletons visíveis)                   |
+| `/?scenario=variable-latency`      | Latências variadas em sequência fixa (reprodutível)               |
+| `/?scenario=out-of-order`          | Requisições alternam 2 s / 200 ms: respostas chegam fora de ordem |
+| `/?scenario=server-error`          | Listagem do catálogo responde 500                                 |
+| `/?scenario=network-error`         | Listagem do catálogo falha por conexão                            |
+| `/?scenario=flaky-catalog`         | Listagem falha 2× com 503; o retry automático recupera            |
+| `/?scenario=favorites-error`       | Favoritar/desfavoritar responde 500 (rollback da UI otimista)     |
+| `/?scenario=auth-unavailable`      | Login e cadastro respondem 503                                    |
+| `/?scenario=wallet-rejected`       | A carteira recusa a conexão no pagamento                          |
+| `/?scenario=payment-refused`       | O pedido é criado, mas o pagamento é recusado pela rede           |
+| `/?scenario=order-timeout`         | Pedido criado, 1ª resposta perdida; o retry recupera o mesmo      |
+| `/?scenario=checkout-price-change` | Preço do 1º item sobe 0.1 ETH ao confirmar a compra               |
+| `/?scenario=checkout-sold-out`     | A edição do 1º item esgota ao confirmar a compra                  |
 
 Os parâmetros podem ser combinados: `/?reset=1&scenario=slow`.
 
@@ -103,6 +108,23 @@ controle que os testes: `POST /api/__mock/scenario/:id`, `POST /api/__mock/sessi
   muda na hora e volta ao estado anterior com uma mensagem.
 - **Troca de usuário:** entre como Ana (tem 2 favoritos), saia e entre como Bruno: nenhum dado da Ana
   aparece.
+
+### Pagamento e confirmação
+
+Entre como `ana@kurio.dev` (tem carteira principal e de reserva), adicione itens e clique em
+**Conectar e finalizar**. Fluxo: dados do colecionador → carteira cadastrada, rede e app da carteira →
+**Conectar carteira** → **Confirmar compra** (abre a revisão) → **Confirmar e pagar**. O pedido fica
+pendente por ~2,5 s e então é confirmado (recibo) ou recusado.
+
+- **Recusa:** `payment-refused`. Os itens continuam no carrinho; "Tentar novamente" cria um novo pedido.
+- **Timeout:** `order-timeout`. O botão fica em "Enviando pedido..." por 5 s, o app reenvia com a
+  mesma chave de idempotência e recebe o pedido já criado (um só pedido).
+- **Mudança durante a compra:** `checkout-price-change` ou `checkout-sold-out`. A confirmação é
+  rejeitada e a revisão mostra a mudança, exigindo aceite antes de confirmar de novo.
+- **Carteira recusa:** `wallet-rejected` ao clicar em **Conectar carteira**.
+- **Refresh com pedido pendente:** recarregue `/pedidos/:id`; o mesmo pedido é retomado.
+- **Sessão expirada no checkout:** **Mocks → Expirar sessão** e clique em qualquer ação; após o login
+  você volta ao pagamento com o formulário preservado.
 
 ## Credenciais fictícias
 

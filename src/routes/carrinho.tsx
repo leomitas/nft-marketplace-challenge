@@ -1,6 +1,6 @@
-import { createFileRoute, Link, useCanGoBack, useRouter } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import type { Cart } from '@/api/contracts/cart'
-import arrowLeft from '@/assets/figma/m-icon-arrow-left.svg'
+import { MobilePageHeader } from '@/components/layout/mobile-page-header'
 import { PageShell } from '@/components/layout/page-shell'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CartIssues } from '@/features/cart/cart-issues'
@@ -35,7 +35,7 @@ function CartPage() {
           </Link>{' '}
           / <span aria-current="page">Carrinho</span>
         </nav>
-        <MobileHeader />
+        <MobilePageHeader title="Carrinho de NFTs" />
         <h1 className="sr-only">Carrinho de NFTs</h1>
 
         {cart.isPending && <CartSkeleton />}
@@ -72,15 +72,20 @@ function CartPage() {
 function CartContent({ cart }: { cart: Cart }) {
   const quote = useQuote()
   const blocked = !quote.data?.purchasable
-  // Payment arrives with the next slice; until then the CTA is shown but unavailable
-  const checkout = (
-    <span
-      title="Pagamento disponível em breve"
-      className="flex h-10 w-full cursor-not-allowed items-center justify-center rounded-[3px] bg-primary text-[15px] leading-4 font-bold text-ink opacity-70 max-md:h-[60px] max-md:rounded-full max-md:bg-linear-[100deg] max-md:from-primary max-md:to-primary/80"
+  const ctaClass =
+    'flex h-10 w-full items-center justify-center rounded-[3px] bg-primary text-[15px] leading-4 font-bold text-ink max-md:h-[60px] max-md:rounded-full max-md:bg-linear-[100deg] max-md:from-primary max-md:to-primary/80'
+  // Visitors go through login (private route) and come back to payment with the merged cart
+  const checkout = blocked ? (
+    <span aria-disabled="true" className={`${ctaClass} opacity-60`}>
+      Conectar e finalizar
+    </span>
+  ) : (
+    <Link
+      to="/pagamento"
+      className={`${ctaClass} hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-ink focus-visible:outline-none`}
     >
       Conectar e finalizar
-      <span className="sr-only"> (pagamento disponível em breve)</span>
-    </span>
+    </Link>
   )
 
   return (
@@ -130,27 +135,6 @@ function CartContent({ cart }: { cart: Cart }) {
       <div className="fixed inset-x-0 bottom-0 z-40 rounded-t-[40px] bg-surface-card px-6 pt-6 pb-8 shadow-[0_0_10px_rgba(10,6,4,0.45)] md:hidden">
         <CartSummary variant="mobile" checkout={checkout} />
       </div>
-    </div>
-  )
-}
-
-function MobileHeader() {
-  const router = useRouter()
-  const canGoBack = useCanGoBack()
-  return (
-    <div className="relative flex h-[35px] items-center justify-center md:hidden">
-      <button
-        type="button"
-        onClick={() => (canGoBack ? router.history.back() : void router.navigate({ to: '/' }))}
-        aria-label="Voltar"
-        className="absolute left-0 flex size-[35px] items-center justify-center rounded-full bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        {/* Figma arrow points down; rotated 90° to point left, as in the design */}
-        <img src={arrowLeft} alt="" width={12} height={7} className="rotate-90" />
-      </button>
-      <p aria-hidden="true" className="text-xl leading-4 font-bold text-foreground">
-        Carrinho de NFTs
-      </p>
     </div>
   )
 }

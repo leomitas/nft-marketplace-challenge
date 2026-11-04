@@ -20,6 +20,11 @@ export const controlHandlers = [
     return new HttpResponse(null, { status: 204 })
   }),
 
+  // Read-only view of every order, so tests can assert that no duplicate was created
+  http.get('/api/__mock/orders', () =>
+    HttpResponse.json(db.state.orders.map(({ id, userId, status }) => ({ id, userId, status }))),
+  ),
+
   // Simulates expiry: every active session is now in the past
   http.post('/api/__mock/sessions/expire', () => {
     const past = new Date(Date.now() - 1000).toISOString()
