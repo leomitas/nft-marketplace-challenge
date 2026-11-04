@@ -10,6 +10,7 @@ import { MobileTabBar } from '@/components/layout/mobile-tab-bar'
 import { PageShell } from '@/components/layout/page-shell'
 import { Toaster } from '@/components/ui/toaster'
 import { SessionWatcher } from '@/features/auth/session-watcher'
+import { RealtimeBridge } from '@/realtime/realtime-bridge'
 
 export type RouterContext = { queryClient: QueryClient }
 
@@ -44,6 +45,7 @@ function RootLayout() {
       {!hideTabBar && <MobileTabBar />}
       <Toaster />
       <SessionWatcher />
+      <RealtimeBridge />
     </>
   )
 }

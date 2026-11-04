@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import { db } from '../db'
 import { applyBasePrice } from '../fixtures/nfts'
+import { publishNftUpdated, replayNft, setRealtimeOffline } from '../realtime'
 import { isScenarioId, setScenario } from '../scenarios'
 
 /**
@@ -11,6 +12,7 @@ export const controlHandlers = [
   http.post('/api/__mock/reset', () => {
     db.reset()
     setScenario('default')
+    setRealtimeOffline(false)
     return new HttpResponse(null, { status: 204 })
   }),
 
@@ -43,6 +45,8 @@ export const controlHandlers = [
       const nft = draft.nfts.find((n) => n.id === params.id)
       if (nft) applyBasePrice(nft, priceEth)
     })
+    // The same change reaches connected clients as `nft.updated`
+    publishNftUpdated(String(params.id))
     return new HttpResponse(null, { status: 204 })
   }),
 
@@ -62,6 +66,24 @@ export const controlHandlers = [
         found = true
       }
     })
+    if (found) publishNftUpdated(String(params.id))
     return new HttpResponse(null, { status: found ? 204 : 400 })
   }),
+
+  // Real-time controls: drop the socket (and refuse reconnections) / bring it back
+  http.post('/api/__mock/realtime/offline', () => {
+    setRealtimeOffline(true)
+    return new HttpResponse(null, { status: 204 })
+  }),
+  http.post('/api/__mock/realtime/online', () => {
+    setRealtimeOffline(false)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  // Sends the last nft.updated twice and then the previous (older) one
+  http.post('/api/__mock/realtime/replay/:nftId', ({ params }) =>
+    replayNft(String(params.nftId))
+      ? new HttpResponse(null, { status: 204 })
+      : new HttpResponse(null, { status: 404 }),
+  ),
 ]

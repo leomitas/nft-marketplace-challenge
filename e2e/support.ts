@@ -72,6 +72,8 @@ export async function signIn(
 
 /** Calls a mock control that takes a JSON body (price/stock changes on the fake server). */
 export async function mockControlJson(page: Page, path: string, body: unknown) {
+  // Server-side changes are pushed over the socket: make sure it is listening first
+  await waitForRealtime(page)
   const status = await page.evaluate(
     async ([p, b]) =>
       (
@@ -139,4 +141,9 @@ export async function openReview(page: Page) {
   const dialog = page.getByRole('dialog', { name: 'Revise seu pedido' })
   await expect(dialog).toBeVisible()
   return dialog
+}
+
+/** Resolves once socket.io-client is connected to the mock server (so pushes are received). */
+export async function waitForRealtime(page: Page) {
+  await expect(page.locator('html[data-realtime="online"]')).toBeAttached()
 }

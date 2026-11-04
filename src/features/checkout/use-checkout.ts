@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import { ApiError } from '@/api/client'
 import type { CreateOrder, Order } from '@/api/contracts/orders'
 import type { ConnectWallet } from '@/api/contracts/wallets'
@@ -62,14 +63,20 @@ export function useDisconnectWallet() {
 export function useCreateOrder() {
   const userId = useUserId()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   return useMutation({
     scope: { id: 'create-order' },
     mutationFn: (body: CreateOrder) =>
       createOrder(body, idempotencyKeyFor(userId, JSON.stringify(body))),
     retry: (failures, error) => error instanceof ApiError && error.isTransient && failures < 1,
     onSuccess: (order) => {
-      queryClient.setQueryData(checkoutKeys.order(userId, order.id), order)
+      // An order.updated event may already have brought a newer version
+      queryClient.setQueryData<Order>(checkoutKeys.order(userId, order.id), (old) =>
+        old && old.version >= order.version ? old : order,
+      )
       void queryClient.invalidateQueries({ queryKey: checkoutKeys.orders(userId) })
+      // Here, not in mutate(): the form may unmount while waiting (e.g. the cart empties)
+      void navigate({ to: '/pedidos/$orderId', params: { orderId: order.id } })
     },
     onError: (error) => {
       // Price, stock or quote moved on the server: show the user the current values
@@ -79,8 +86,6 @@ export function useCreateOrder() {
     },
   })
 }
-
-const POLL_MS = 1000
 
 export function useOrder(orderId: string) {
   const userId = useUserId()
@@ -96,8 +101,8 @@ export function useOrder(orderId: string) {
       return order
     },
     enabled: Boolean(userId),
-    // Pending orders are polled until they settle; terminal states never change again
-    refetchInterval: (query) => (query.state.data?.status === 'pending' ? POLL_MS : false),
+    // No polling: `order.updated` (Socket.IO) moves a pending order forward, and a reconnection
+    // or reload refetches it. Terminal states never change again.
     staleTime: (query) => (isTerminal(query.state.data) ? Infinity : 0),
     retry: (failures, error) => error instanceof ApiError && error.isTransient && failures < 3,
   })
