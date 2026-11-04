@@ -6,7 +6,8 @@ pagamentos simulados por MSW. Enunciado em [`docs/DESAFIO.md`](docs/DESAFIO.md);
 
 > Entrega em fatias verticais. Concluído até agora: **Início** (catálogo completo), **Detalhe do NFT**
 > (galeria, edições, quantidade, avaliações), **favoritos** com atualização otimista e **conta**
-> (cadastro, login, sessão, logout, expiração, rotas privadas). Próximas fatias: carrinho,
+> (cadastro, login, sessão, logout, expiração, rotas privadas) e **carrinho** (quantidades, cupom,
+> cotação da API, mudanças de preço/estoque, merge do visitante no login). Próximas fatias:
 > pagamento/confirmação, tempo real, perfil/carteiras, acessibilidade e Lighthouse.
 
 ## Requisitos
@@ -81,6 +82,16 @@ controle que os testes: `POST /api/__mock/scenario/:id`, `POST /api/__mock/sessi
 - **Skeletons:** `/?scenario=slow`.
 - **Vazio:** `/?scenario=empty`, ou uma busca sem resultado (`/?q=zzz`).
 - **NFT inexistente:** `/nfts/qualquer-coisa`.
+
+### Carrinho
+
+- **Cupons:** `KURIO10` (10%), `LANCAMENTO` (0.05 ETH em compras acima de 0.5 ETH), `GENESIS20`
+  (expirado) e qualquer outro código (inválido).
+- **Preço alterado / edição esgotada:** com itens no carrinho, mude o servidor simulado pelo console e
+  recarregue (o tempo real chega na fatia 5):
+  `fetch('/api/__mock/nfts/emerald-ape-042/price', { method: 'POST', body: JSON.stringify({ priceEth: '1.49' }) })`
+  ou `.../stock` com `{ "editionId": "1-50", "available": 0 }`. O carrinho mostra o aviso e a ação.
+- **Carrinho do visitante no login:** adicione itens sem estar logado e entre; os itens vão para a conta.
 
 ### Conta, sessão e favoritos
 

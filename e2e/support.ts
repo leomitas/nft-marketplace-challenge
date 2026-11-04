@@ -67,3 +67,36 @@ export async function signIn(
   await fillLogin(page, user)
   await expect(page).toHaveURL((url) => `${url.pathname}${url.search}` === redirect)
 }
+
+/** Calls a mock control that takes a JSON body (price/stock changes on the fake server). */
+export async function mockControlJson(page: Page, path: string, body: unknown) {
+  const status = await page.evaluate(
+    async ([p, b]) =>
+      (
+        await fetch(`/api/__mock/${p}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(b),
+        })
+      ).status,
+    [path, body] as const,
+  )
+  expect(status).toBe(204)
+}
+
+/** Adds an NFT edition to the cart through the detail page UI (desktop or mobile layout). */
+export async function addToCartFromDetail(page: Page, nftId: string, edition = '1-50') {
+  await page.goto(`/nfts/${nftId}?edition=${edition}`)
+  const buy = page
+    .getByRole('button', { name: /^(COMPRAR|Comprar NFT)$/ })
+    .filter({ visible: true })
+  await buy.click()
+  await expect(page).toHaveURL(/\/carrinho$/)
+}
+
+export function cartLines(page: Page) {
+  return page
+    .getByRole('list', { name: 'Itens do carrinho' })
+    .filter({ visible: true })
+    .getByRole('listitem')
+}

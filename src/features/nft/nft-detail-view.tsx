@@ -1,9 +1,11 @@
-import { Link, useCanGoBack, useRouter } from '@tanstack/react-router'
+import { Link, useCanGoBack, useNavigate, useRouter } from '@tanstack/react-router'
 import { useState } from 'react'
 import type { EditionId, NftDetail } from '@/api/contracts/catalog'
 import arrowLeft from '@/assets/figma/m-icon-arrow-left.svg'
 import shopIcon from '@/assets/figma/m-icon-shop-dark.svg'
 import starIcon from '@/assets/figma/icon-star.svg'
+import { toast } from '@/components/ui/toaster'
+import { useAddToCart } from '@/features/cart/use-cart'
 import { FavoriteButton } from '@/features/favorites/favorite-button'
 import { formatEth, multiplyEth } from '@/lib/money'
 import { EditionPicker } from './edition-picker'
@@ -44,6 +46,26 @@ export function NftDetailView({
   const selectEdition = (id: EditionId) => {
     setQuantity(1)
     onEditionChange(id)
+  }
+
+  const addToCart = useAddToCart()
+  const navigate = useNavigate()
+  /** "Comprar" adds and opens the cart; the mobile cart button only adds. */
+  function add(goToCart: boolean) {
+    if (!edition || addToCart.isPending) return
+    addToCart.mutate(
+      { nftId: nft.id, editionId: edition.id, quantity },
+      {
+        onSuccess: () => {
+          if (goToCart) void navigate({ to: '/carrinho' })
+          else
+            toast.success(`${nft.name} (${edition.label}) adicionado ao carrinho.`, {
+              action: { label: 'Ver carrinho', onClick: () => void navigate({ to: '/carrinho' }) },
+            })
+        },
+        onError: (error) => toast.error(error.message),
+      },
+    )
   }
 
   return (
@@ -96,7 +118,15 @@ export function NftDetailView({
                   disabled={soldOut}
                 />
                 <div className="flex items-center gap-2">
-                  <PurchaseUnavailable soldOut={soldOut} />
+                  <button
+                    type="button"
+                    onClick={() => add(true)}
+                    disabled={soldOut || addToCart.isPending}
+                    aria-busy={addToCart.isPending}
+                    className="flex h-10 w-[130px] items-center justify-center rounded-[6px] bg-primary text-sm leading-5 font-bold text-ink hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-ink focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {soldOut ? 'ESGOTADO' : addToCart.isPending ? 'ADICIONANDO...' : 'COMPRAR'}
+                  </button>
                   <FavoriteButton nft={nft} variant="detail" />
                 </div>
               </div>
@@ -110,7 +140,11 @@ export function NftDetailView({
         </div>
 
         <NftInfoTabs nft={nft} />
-        <RelatedCarousel nftId={nft.id} collection={nft.collection} />
+        <RelatedCarousel
+          title="Mais desta coleção"
+          query={{ collections: [nft.collection], pageSize: 11 }}
+          excludeIds={[nft.id]}
+        />
       </div>
 
       {/* ---------- Mobile ---------- */}
@@ -149,7 +183,11 @@ export function NftDetailView({
             <NftInfoTabs nft={nft} />
           </div>
           <div className="mt-10">
-            <RelatedCarousel nftId={nft.id} collection={nft.collection} />
+            <RelatedCarousel
+              title="Mais desta coleção"
+              query={{ collections: [nft.collection], pageSize: 11 }}
+              excludeIds={[nft.id]}
+            />
           </div>
         </div>
 
@@ -171,20 +209,23 @@ export function NftDetailView({
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span
-              className="flex h-[60px] flex-1 cursor-not-allowed items-center justify-center rounded-[40px] bg-linear-[100deg] from-primary from-4% to-primary/80 text-base leading-5 font-bold text-ink opacity-70"
-              title="Compra disponível em breve"
+            <button
+              type="button"
+              onClick={() => add(true)}
+              disabled={soldOut || addToCart.isPending}
+              className="flex h-[60px] flex-1 items-center justify-center rounded-[40px] bg-linear-[100deg] from-primary from-4% to-primary/80 text-base leading-5 font-bold text-ink focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-card focus-visible:outline-none disabled:opacity-60"
             >
               {soldOut ? 'Esgotado' : 'Comprar NFT'}
-              <span className="sr-only"> (disponível em breve)</span>
-            </span>
-            <span
-              className="flex size-[60px] shrink-0 cursor-not-allowed items-center justify-center rounded-[40px] border border-border bg-surface-raised opacity-70"
-              title="Carrinho disponível em breve"
+            </button>
+            <button
+              type="button"
+              onClick={() => add(false)}
+              disabled={soldOut || addToCart.isPending}
+              aria-label={`Adicionar ${nft.name} ao carrinho`}
+              className="flex size-[60px] shrink-0 items-center justify-center rounded-[40px] border border-border bg-surface-raised focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-60"
             >
               <img src={shopIcon} alt="" width={20} height={20} />
-              <span className="sr-only">Adicionar ao carrinho (disponível em breve)</span>
-            </span>
+            </button>
           </div>
         </div>
       </div>
@@ -233,18 +274,5 @@ function BackButton() {
     <Link to="/" aria-label="Voltar ao início" className={className}>
       {icon}
     </Link>
-  )
-}
-
-/** Cart and checkout arrive in the next slice; until then buying is visibly unavailable. */
-function PurchaseUnavailable({ soldOut }: { soldOut: boolean }) {
-  return (
-    <span
-      className="flex h-10 w-[130px] cursor-not-allowed items-center justify-center rounded-[6px] bg-primary text-sm leading-5 font-bold text-ink opacity-70"
-      title={soldOut ? 'Todas as edições estão esgotadas' : 'Compra disponível em breve'}
-    >
-      {soldOut ? 'ESGOTADO' : 'COMPRAR'}
-      {!soldOut && <span className="sr-only"> (disponível em breve)</span>}
-    </span>
   )
 }

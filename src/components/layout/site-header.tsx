@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { cn } from 'cn'
 import cartIcon from '@/assets/figma/icon-cart.svg'
+import { CartLink } from '@/features/cart/cart-link'
 import { AccountMenu } from './account-menu'
 import { HeaderSearch } from './header-search'
 import { SoonBadge } from './soon'
@@ -58,11 +59,7 @@ export function SiteHeader({ active, divider = true }: { active: Section; divide
 
         <div className="flex items-center gap-7">
           <HeaderSearch />
-          {/* The cart arrives with its slice; until then it is visibly unavailable */}
-          <span className="relative opacity-60" title="Carrinho disponível em breve">
-            <img src={cartIcon} alt="" width={24} height={24} />
-            <span className="sr-only">Carrinho (disponível em breve)</span>
-          </span>
+          <CartLink icon={cartIcon} iconSize={[24, 24]} />
           <AccountMenu />
         </div>
       </div>

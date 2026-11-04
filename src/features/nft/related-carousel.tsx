@@ -2,24 +2,27 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { cn } from 'cn'
 import { useEffect, useRef, useState } from 'react'
-import type { CollectionId } from '@/api/contracts/catalog'
+import type { CatalogQuery } from '@/api/contracts/catalog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { catalogListQuery } from '@/features/catalog/queries'
 import { formatEth } from '@/lib/money'
 
 /**
- * "Mais desta coleção": items of the same collection, in a horizontal scroll-snap row.
+ * Horizontal scroll-snap row of NFTs ("Mais desta coleção", "Colecionadores também viram").
  * The dots reflect and control the scroll position, like the carousel dots in Figma.
  */
 export function RelatedCarousel({
-  nftId,
-  collection,
+  title,
+  query,
+  excludeIds = [],
 }: {
-  nftId: string
-  collection: CollectionId
+  title: string
+  query: CatalogQuery
+  excludeIds?: string[]
 }) {
-  const related = useQuery(catalogListQuery({ collections: [collection], pageSize: 11 }))
-  const items = related.data?.items.filter((item) => item.id !== nftId).slice(0, 10) ?? []
+  const related = useQuery(catalogListQuery(query))
+  const items =
+    related.data?.items.filter((item) => !excludeIds.includes(item.id)).slice(0, 10) ?? []
   const scroller = useRef<HTMLUListElement>(null)
   const [page, setPage] = useState(0)
   const [pages, setPages] = useState(1)
@@ -43,11 +46,9 @@ export function RelatedCarousel({
   if (related.isError || (related.isSuccess && items.length === 0)) return null
 
   return (
-    <section aria-labelledby="related-title" className="flex flex-col gap-8">
+    <section aria-label={title} className="flex flex-col gap-8">
       <div className="flex flex-col gap-3 border-b border-foreground/30 pb-3">
-        <h2 id="related-title" className="text-[17px] leading-4 font-bold text-text-accent">
-          Mais desta coleção
-        </h2>
+        <h2 className="text-[17px] leading-4 font-bold text-text-accent">{title}</h2>
       </div>
 
       <ul

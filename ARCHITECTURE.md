@@ -1,6 +1,6 @@
 # Arquitetura
 
-Documento vivo: cada fatia acrescenta suas decisões. Estado atual: **Início, Detalhe do NFT, favoritos e conta/sessão**.
+Documento vivo: cada fatia acrescenta suas decisões. Estado atual: **Início, Detalhe do NFT, favoritos, conta/sessão e carrinho**.
 
 ## Stack e versões relevantes
 
@@ -133,6 +133,46 @@ reconciliar com o servidor. Mutations do mesmo NFT compartilham um `scope`, ent�
 executam em sequência e não deixam o cache inconsistente. PUT/DELETE são idempotentes no mock.
 Visitante que clica em favoritar vai para o login e volta ao mesmo NFT.
 
+## Carrinho e cotação
+
+- **O carrinho vive no servidor simulado**, inclusive o do visitante: ele é identificado por um id
+  aleatório (`kurio:cart-id`, enviado como `X-Cart-Id`). Assim refresh, outra aba e o merge no login
+  usam a mesma fonte de verdade. Com sessão, o servidor usa o carrinho do usuário e ignora o header.
+- **Linha = NFT + tier de edição** (`id = nftId:editionId`). Cada linha guarda o preço aceito
+  (`acceptedPriceEth`); a resposta sempre traz o preço atual e `issues` quando algo mudou:
+  `PRICE_CHANGED`, `INSUFFICIENT_STOCK`, `SOLD_OUT`. A UI mostra um aviso com a ação para resolver
+  (aceitar novos preços, ajustar quantidade, remover). Enquanto houver issue, a cotação vem com
+  `purchasable: false`.
+- **Merge no login**: logo após login/cadastro, `POST /cart/merge` move o carrinho do visitante para a
+  conta (quantidades somadas, limitadas por estoque e por pedido), apaga o carrinho visitante e gera
+  um novo id vazio. Depois o cache do carrinho do usuário é invalidado, o que cancela qualquer leitura
+  feita antes do merge. Logout mostra um carrinho visitante vazio; o da conta continua no servidor.
+- **Cotação** (`GET /cart/quote`): subtotal, desconto, taxa de rede (0.016 ETH estimada por pedido) e
+  total calculados no servidor com `big.js`, mais um `id` derivado de linhas, preços e cupom. O
+  front-end nunca soma valores; ele exibe a cotação. O checkout (próxima fatia) envia esse `id` para o
+  servidor revalidar.
+- **Cache**: carrinho em `['me', userId, 'cart']` (logado) ou `['guest-cart', cartId]` (visitante);
+  cotação em `[...cartKey, 'quote']`. Toda mutation devolve o carrinho novo (vai direto para o cache) e
+  invalida a cotação. Mutations do carrinho compartilham um `scope`, então cliques rápidos executam em
+  ordem. Carrinho e cotação refazem a busca ao voltar o foco para a aba.
+- **Quantidade** é limitada por `min(estoque do tier, maxPerOrder)`; se o estoque cair abaixo da
+  quantidade da linha, só é possível diminuir.
+- **Remover** tem "Desfazer" no toast, que readiciona a mesma linha.
+- **Cupons** (validados no servidor): `KURIO10` (10%), `LANCAMENTO` (0.05 ETH acima de 0.5 ETH),
+  `GENESIS20` (expirado). Qualquer outro → `COUPON_INVALID`. O erro aparece associado ao campo.
+
+| Método | Rota                      | Observação                                                              |
+| ------ | ------------------------- | ----------------------------------------------------------------------- |
+| GET    | `/api/cart`               | `Cart` com `lines[].issues` e `itemCount`                               |
+| GET    | `/api/cart/quote`         | `Quote` (`id`, valores, `purchasable`, `expiresAt`)                     |
+| POST   | `/api/cart/items`         | `{ nftId, editionId, quantity }`; 409 `INSUFFICIENT_STOCK`              |
+| PATCH  | `/api/cart/items/:lineId` | `{ quantity }`; reduzir é sempre permitido                              |
+| DELETE | `/api/cart/items/:lineId` | idempotente                                                             |
+| POST   | `/api/cart/acknowledge`   | aceita os preços atuais de todas as linhas                              |
+| PUT    | `/api/cart/coupon`        | `{ code }`; 422 `COUPON_INVALID`/`COUPON_EXPIRED`/`COUPON_MIN_SUBTOTAL` |
+| DELETE | `/api/cart/coupon`        | remove o cupom                                                          |
+| POST   | `/api/cart/merge`         | privado; usa `X-Cart-Id` do visitante                                   |
+
 ## Mocks
 
 - **Ativação**: `VITE_ENABLE_MOCKS` (padrão ligado; só `false` desliga). Como não há backend real, o
@@ -146,7 +186,8 @@ Visitante que clica em favoritar vai para o login e volta ao mesmo NFT.
 - **Cenários** (`src/mocks/scenarios.ts`): latência e falhas determinísticas (sem `Math.random`).
   Lista e uso no README. Os testes usam os mesmos ids.
 - **Controles** (`src/mocks/handlers/control.ts`): `POST /api/__mock/scenario/:id`,
-  `/sessions/expire` e `/reset`. Usados pelo painel de mocks (raiz React própria, carregada depois do
+  `/sessions/expire`, `/reset`, `/nfts/:id/price` (`{ priceEth }`) e `/nfts/:id/stock`
+  (`{ editionId, available }`). Usados pelo painel de mocks (raiz React própria, carregada depois do
   primeiro render e oculta em navegadores automatizados) e pelos testes.
 - **Usuários** (`fixtures/users.ts`): Ana (2 favoritos) e Bruno, com hashes pré-calculados.
 - **Avaliações** geradas por NFT com PRNG determinístico; a média é calculada a partir delas.
@@ -174,7 +215,7 @@ Visitante que clica em favoritar vai para o login e volta ao mesmo NFT.
   sociais, botão central de scan no mobile): aparecem como no layout, mas sem link, com `title` e texto
   para leitores de tela "(disponível em breve)". A newsletter valida o e-mail e informa que não está
   disponível, sem simular sucesso.
-- **Carrinho e Comprar** ficam visivelmente indisponíveis até a fatia do carrinho.
+- **"Conectar e finalizar"** fica visivelmente indisponível até a fatia de pagamento.
 - **Checkbox dos filtros**: o Figma indica seleção só pela cor; foi adicionado um marcador com ✓
   (estado não depende só de cor). O input nativo fica acessível (`sr-only`) com foco visível.
 - **Preço anterior** aparece riscado (o Figma usa só cor) e tem rótulo "Preço anterior" para leitores
@@ -223,3 +264,15 @@ Visitante que clica em favoritar vai para o login e volta ao mesmo NFT.
   menu (Perfil, Favoritos, Sair). `/perfil` é provisório até a fatia de perfil.
 - **Toasts** (Sonner) ficam embaixo, acima da tab bar e da barra de compra no mobile, para não cobrir
   ações.
+
+### Carrinho
+
+- **Tabela desktop**: a coluna "Edições" do Figma é o seletor de quantidade (como no layout). Como as
+  linhas são por tier, cada item também mostra "Edição 1/50" abaixo do ID do token.
+- **Mobile**: cards com miniatura e o painel de resumo fixo embaixo, como no frame. Os botões −/+ são
+  os círculos escuros do frame; o carrossel "Colecionadores também viram" fica só no desktop (no mobile
+  o rodapé é ocupado pelo resumo). O frame mostra a lixeira sobreposta ao stepper; aqui ela fica no topo
+  do card para não competir com o "+".
+- **Badge do carrinho** = soma das quantidades (o Figma mostra um número fixo).
+- **Desconto sem cupom**: o Figma mostra "(-) 00.00"; aqui é "(-) 0.00 ETH", no mesmo formato dos
+  demais valores. Valores com mais de 2 casas (taxa, total) aparecem com a precisão da API (até 6).

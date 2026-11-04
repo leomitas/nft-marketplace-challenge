@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { fillLogin, isMobile, mockControl, openWithScenario, signIn, USERS } from './support.ts'
+import { fillLogin, mockControl, openWithScenario, signIn, USERS } from './support.ts'
 
 test.describe('Autenticação e sessão', () => {
   test('login valida campos, rejeita senha errada e volta ao fluxo anterior', async ({ page }) => {
@@ -89,11 +89,17 @@ test.describe('Autenticação e sessão', () => {
     await signIn(page, USERS.ana, '/nfts/emerald-ape-042')
     await mockControl(page, 'sessions/expire')
 
-    const favorite = isMobile(page)
-      ? page.getByRole('button', { name: 'Favoritar Emerald Ape #042' }).last()
-      : page.getByRole('button', { name: 'Favoritar Emerald Ape #042' }).first()
-    await favorite.click()
+    // Any authenticated request after expiry ends the session — the favorite click, or a
+    // background refetch (e.g. the cart on window focus) that may get there first
+    const favorite = page
+      .getByRole('button', { name: 'Favoritar Emerald Ape #042' })
+      .filter({ visible: true })
+    await favorite.click({ timeout: 5_000 }).catch(() => undefined)
     await expect(page).toHaveURL(/\/login\?redirect=%2Fnfts%2Femerald-ape-042&reason=expired/)
+
+    // Signing back in resumes on the same NFT, as the same user
+    await fillLogin(page, USERS.ana)
+    await expect(page).toHaveURL(/\/nfts\/emerald-ape-042$/)
   })
 
   test('logout e troca de usuário não expõem dados do usuário anterior', async ({ page }) => {
