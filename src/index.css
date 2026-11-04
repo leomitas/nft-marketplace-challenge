@@ -1,0 +1,90 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/roboto-mono';
+
+/*
+ * Design tokens from Figma (docs/figma/tokens.md), exposed with shadcn/ui variable names.
+ * The layout has a single dark theme, so there is no light/dark switch.
+ */
+:root {
+  --ink: #140d0a;
+  --surface-card: #241612;
+  --surface-dark: #38220f;
+  --border-strong: #3f2319;
+  --border-soft: #55321f;
+  --brand-primary: #d28a4c;
+  --brand-secondary: #b39463;
+  --text-accent: #e89b55;
+  --text-primary: #f7f3ec;
+  --text-foreground: #f5f1eb;
+  --text-secondary: #cfb28c;
+  --background-elevated: #fbfbfb;
+
+  --radius: 0.75rem;
+  --background: var(--ink);
+  --foreground: var(--text-primary);
+  --card: var(--surface-card);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface-card);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--brand-primary);
+  --primary-foreground: var(--ink);
+  --secondary: var(--surface-dark);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--surface-dark);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--surface-dark);
+  --accent-foreground: var(--text-accent);
+  --destructive: #e5484d;
+  --border: var(--border-strong);
+  --input: var(--border-soft);
+  --ring: var(--text-accent);
+}
+
+@theme inline {
+  --font-sans: 'Roboto Mono Variable', ui-monospace, monospace;
+  --font-mono: 'Roboto Mono Variable', ui-monospace, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-ink: var(--ink);
+  --color-surface-card: var(--surface-card);
+  --color-surface-dark: var(--surface-dark);
+  --color-border-soft: var(--border-soft);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-text-accent: var(--text-accent);
+  --color-text-secondary: var(--text-secondary);
+  --color-elevated: var(--background-elevated);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --container-content: 1200px;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background font-sans text-foreground antialiased;
+  }
+}
