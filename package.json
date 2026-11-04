@@ -12,10 +12,11 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --grep-invert @visual",
+    "test:e2e:visual": "playwright test --grep @visual",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
-    "test:e2e:update-visual": "playwright test e2e/visual.spec.ts --update-snapshots",
+    "test:e2e:update-visual": "playwright test --grep @visual --update-snapshots",
     "lighthouse": "pnpm build && node scripts/lighthouse.mjs"
   },
   "dependencies": {
