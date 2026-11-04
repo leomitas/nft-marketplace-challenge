@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedCarteirasRouteImport } from './routes/_authenticated/carteiras'
 import { Route as AuthenticatedFavoritosRouteImport } from './routes/_authenticated/favoritos'
 import { Route as AuthenticatedPagamentoRouteImport } from './routes/_authenticated/pagamento'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
@@ -43,6 +44,11 @@ const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedCarteirasRoute = AuthenticatedCarteirasRouteImport.update({
+  id: '/carteiras',
+  path: '/carteiras',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedFavoritosRoute = AuthenticatedFavoritosRouteImport.update({
   id: '/favoritos',
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/login': typeof LoginRoute
+  '/carteiras': typeof AuthenticatedCarteirasRoute
   '/favoritos': typeof AuthenticatedFavoritosRoute
   '/pagamento': typeof AuthenticatedPagamentoRoute
   '/perfil': typeof AuthenticatedPerfilRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/login': typeof LoginRoute
+  '/carteiras': typeof AuthenticatedCarteirasRoute
   '/favoritos': typeof AuthenticatedFavoritosRoute
   '/pagamento': typeof AuthenticatedPagamentoRoute
   '/perfil': typeof AuthenticatedPerfilRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/cadastro': typeof CadastroRoute
   '/carrinho': typeof CarrinhoRoute
   '/login': typeof LoginRoute
+  '/_authenticated/carteiras': typeof AuthenticatedCarteirasRoute
   '/_authenticated/favoritos': typeof AuthenticatedFavoritosRoute
   '/_authenticated/pagamento': typeof AuthenticatedPagamentoRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/carrinho'
     | '/login'
+    | '/carteiras'
     | '/favoritos'
     | '/pagamento'
     | '/perfil'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/carrinho'
     | '/login'
+    | '/carteiras'
     | '/favoritos'
     | '/pagamento'
     | '/perfil'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
     | '/cadastro'
     | '/carrinho'
     | '/login'
+    | '/_authenticated/carteiras'
     | '/_authenticated/favoritos'
     | '/_authenticated/pagamento'
     | '/_authenticated/perfil'
@@ -189,6 +201,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/carteiras': {
+      id: '/_authenticated/carteiras'
+      path: '/carteiras'
+      fullPath: '/carteiras'
+      preLoaderRoute: typeof AuthenticatedCarteirasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/favoritos': {
       id: '/_authenticated/favoritos'
       path: '/favoritos'
@@ -228,6 +247,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedCarteirasRoute: typeof AuthenticatedCarteirasRoute
   AuthenticatedFavoritosRoute: typeof AuthenticatedFavoritosRoute
   AuthenticatedPagamentoRoute: typeof AuthenticatedPagamentoRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
@@ -235,6 +255,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedCarteirasRoute: AuthenticatedCarteirasRoute,
   AuthenticatedFavoritosRoute: AuthenticatedFavoritosRoute,
   AuthenticatedPagamentoRoute: AuthenticatedPagamentoRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,

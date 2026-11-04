@@ -255,6 +255,31 @@ Visitante que clica em favoritar vai para o login e volta ao mesmo NFT.
 - **Avisos acessíveis**: mudança de preço/estoque de um item do carrinho gera um toast (região
   `aria-live`) e o aviso "Seu carrinho mudou" do carrinho/checkout.
 
+## Perfil e carteiras
+
+Sem frame no Figma: as telas seguem a linguagem do pagamento (cards `surface-card`, labels acima dos
+campos, ações laranja) e funcionam em uma coluna no mobile.
+
+- **Perfil** (`/perfil`): nome, usuário e e-mail (conflito de usuário/e-mail vem da API como 409 com
+  `fields`), avatar e troca de senha. O usuário retornado pelas mutations atualiza o cache da sessão,
+  então cabeçalho e menus refletem a mudança sem refetch.
+- **Avatar**: arquivo PNG/JPG/WebP até 200 KB, validado no cliente e de novo no mock. Trafega como
+  data URL (não há serviço de upload) e fica persistido no banco simulado.
+- **Senha**: exige a senha atual; o mock grava apenas um novo salt + hash SHA-256.
+- **Carteiras** (`/carteiras`): uma principal e uma secundária por usuário (`PUT /api/me/wallets/:role`
+  cria ou atualiza). Endereço 0x de 40 hex, ENS opcional terminado em `.eth`, rede e app. O mesmo
+  endereço nas duas → 409. Editar a carteira conectada no checkout derruba essa conexão.
+- Exclusão de carteira ficou de fora (o enunciado pede cadastro e edição).
+
+| Método | Rota                    | Observação                                                          |
+| ------ | ----------------------- | ------------------------------------------------------------------- |
+| GET    | `/api/me/profile`       | `User`                                                              |
+| PATCH  | `/api/me/profile`       | `{ name, username, email }`; 422 `VALIDATION`; 409 `CONFLICT`       |
+| PUT    | `/api/me/avatar`        | `{ dataUrl }`; 422 com `fields.avatar`                              |
+| DELETE | `/api/me/avatar`        | `User` sem avatar                                                   |
+| POST   | `/api/me/password`      | `{ currentPassword, newPassword }`; 204; 422 `INVALID_PASSWORD`     |
+| PUT    | `/api/me/wallets/:role` | `primary`/`secondary`; `{ label, address, ens, network, provider }` |
+
 ## Mocks
 
 - **Ativação**: `VITE_ENABLE_MOCKS` (padrão ligado; só `false` desliga). Como não há backend real, o

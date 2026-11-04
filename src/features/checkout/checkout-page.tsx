@@ -443,7 +443,10 @@ function WalletPicker({
       <legend className="mb-3 text-lg leading-4 font-bold">Carteira cadastrada</legend>
       {wallets.length === 0 && (
         <p id={`${id}-error`} role="alert" className="text-sm text-destructive">
-          {error ?? 'Você ainda não tem carteiras cadastradas.'}
+          {error ?? 'Você ainda não tem carteiras cadastradas.'}{' '}
+          <Link to="/carteiras" className="font-bold text-text-accent underline underline-offset-4">
+            Cadastrar carteira
+          </Link>
         </p>
       )}
       <div className="grid gap-3 md:grid-cols-2">

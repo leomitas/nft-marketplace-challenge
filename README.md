@@ -136,6 +136,14 @@ espere alguns segundos e restaure — o pedido é reconciliado via REST e mostra
 `fetch('/api/__mock/realtime/offline', { method: 'POST' })`, `.../online` e
 `.../realtime/replay/emerald-ape-042` (reenvia o último evento duplicado e um mais antigo).
 
+### Perfil e carteiras
+
+- **Conflito no perfil:** como Ana, troque o usuário para `bruno.lima` em `/perfil`.
+- **Senha:** informe uma senha atual errada para ver o erro da API; depois de trocar, saia e entre
+  com a nova.
+- **Carteiras:** como Bruno (só tem a principal), cadastre a secundária em `/carteiras`; usar o mesmo
+  endereço da principal gera conflito. As carteiras aparecem no pagamento.
+
 ## Credenciais fictícias
 
 | Usuário    | E-mail            | Senha        | Observação             |

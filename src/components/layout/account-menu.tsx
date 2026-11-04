@@ -63,6 +63,9 @@ export function AccountMenu() {
         <DropdownMenuItem asChild className="focus:bg-surface-dark">
           <Link to="/favoritos">Favoritos</Link>
         </DropdownMenuItem>
+        <DropdownMenuItem asChild className="focus:bg-surface-dark">
+          <Link to="/carteiras">Carteiras</Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator className="bg-border" />
         <DropdownMenuItem
           className="focus:bg-surface-dark"
