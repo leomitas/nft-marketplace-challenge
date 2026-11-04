@@ -1,11 +1,11 @@
 # Arquitetura
 
-Documento vivo: cada fatia acrescenta suas decisões. Estado atual: **Início, Detalhe do NFT, favoritos, conta/sessão e carrinho**.
+Decisões técnicas, contratos, políticas de cache/sessão/tempo real, limitações e desvios do Figma.
 
 ## Stack e versões relevantes
 
 React 19, TypeScript 6, Vite 8, TanStack Router (file-based) e Query 5, Axios, Tailwind CSS 4,
-shadcn/ui (Radix), MSW 2, Playwright, Lighthouse CI, zod 4, big.js.
+shadcn/ui (Radix), MSW 2, Socket.IO client 4, Playwright, Lighthouse 13, zod 4, big.js.
 
 - **MSW 2 em vez de 3** e **TypeScript 6 em vez de 7**: `@mswjs/socket.io-binding` exige MSW 2 e o
   `typescript-eslint` ainda não suporta TS 7.
@@ -68,7 +68,7 @@ As contagens por coleção e rede vêm de `GET /api/nfts/facets`, calculadas sob
 isso diferem dos números fixos desenhados no Figma (ex.: "Música (65)"): o layout mostra valores de
 exemplo e a implementação mostra dados coerentes com a listagem.
 
-## Contratos REST (até agora)
+## Contratos REST
 
 | Método | Rota                       | Resposta                                                                        |
 | ------ | -------------------------- | ------------------------------------------------------------------------------- |
@@ -98,7 +98,7 @@ Rotas privadas exigem `Authorization: Bearer <token>`.
 selecionado no Figma). `NftSummary.editions` traz os totais somados de todos os tiers; `available === 0`
 significa esgotado. `maxPerOrder` (5) limita a quantidade por pedido, além do estoque.
 
-`NftSummary` já traz `version` (inteiro incrementado a cada mudança), usado na fatia de tempo real para
+`NftSummary` já traz `version` (inteiro incrementado a cada mudança), usado pelo tempo real para
 descartar eventos antigos.
 
 ## Sessão e autenticação
@@ -149,7 +149,7 @@ Visitante que clica em favoritar vai para o login e volta ao mesmo NFT.
   feita antes do merge. Logout mostra um carrinho visitante vazio; o da conta continua no servidor.
 - **Cotação** (`GET /cart/quote`): subtotal, desconto, taxa de rede (0.016 ETH estimada por pedido) e
   total calculados no servidor com `big.js`, mais um `id` derivado de linhas, preços e cupom. O
-  front-end nunca soma valores; ele exibe a cotação. O checkout (próxima fatia) envia esse `id` para o
+  front-end nunca soma valores; ele exibe a cotação. O checkout envia esse `id` para o
   servidor revalidar.
 - **Cache**: carrinho em `['me', userId, 'cart']` (logado) ou `['guest-cart', cartId]` (visitante);
   cotação em `[...cartKey, 'quote']`. Toda mutation devolve o carrinho novo (vai direto para o cache) e
@@ -194,8 +194,8 @@ Visitante que clica em favoritar vai para o login e volta ao mesmo NFT.
   automático** em falha transitória, seguro justamente pela chave. Timeout da criação: 5 s.
 - **Estados**: `pending` → `confirmed | refused` (terminais). O mock decide o desfecho na criação
   (cenário) e liquida após 2,5 s, de forma preguiçosa a cada leitura do pedido, então refresh/reabertura
-  sempre veem o estado real. A página `/pedidos/:id` consulta a cada 1 s enquanto pendente (na fatia 5
-  o `order.updated` via Socket.IO passa a ser o caminho principal). A confirmação só aparece com
+  sempre veem o estado real. A página `/pedidos/:id` é atualizada pelo `order.updated` (Socket.IO;
+  ver "Tempo real"), sem polling. A confirmação só aparece com
   `status === 'confirmed'` vindo da API.
 - **Efeitos da confirmação** (no servidor): baixa o estoque das edições, incrementa `version` dos NFTs
   e remove do carrinho apenas as quantidades compradas. Se o estoque acabou entre a criação e a
@@ -241,10 +241,12 @@ Visitante que clica em favoritar vai para o login e volta ao mesmo NFT.
 - **Duplicados e antigos**: um filtro por conexão descarta `eventId` já visto e versões menores ou
   iguais à última aplicada; além disso o cache só é sobrescrito se a versão do evento for maior que a
   do dado em cache (um refetch REST mais novo nunca é regredido).
-- **Reconexão**: ao (re)conectar, todas as queries ativas (menos a sessão) são invalidadas e refeitas
+- **Reconexão**: ao reconectar, todas as queries ativas (menos a sessão) são invalidadas e refeitas
   via REST, recuperando o que foi perdido enquanto o socket estava fora. Um aviso "Tempo real
   desconectado. Reconectando..." (`role=status`) aparece durante a queda. Tentativas de conexão sem
-  resposta expiram em 3 s e são refeitas (backoff 0,5–2 s).
+  resposta expiram em 3 s e são refeitas (backoff 0,5–2 s). Na primeira conexão só os pedidos são
+  revalidados (um pendente pode ter sido liquidado entre o GET e o `session.join`); o resto acabou de
+  ser carregado e refazê-lo dobraria as requisições iniciais.
 - **Pedido pendente**: não há polling; o `order.updated` leva o pedido ao estado final. Se o evento
   se perde (socket fora, reload), a reconexão ou a nova leitura buscam o estado real — o mock liquida o
   pedido de forma preguiçosa na leitura e reagenda os pendentes ao recarregar.
@@ -289,7 +291,7 @@ campos, ações laranja) e funcionam em uma coluna no mobile.
 - **Fixtures** (`src/mocks/fixtures/nfts.ts`): 60 NFTs. Os 8 primeiros são os desenhados no Figma, na
   mesma ordem; os demais são gerados por um PRNG com semente fixa e relógio fixo (`FIXTURE_NOW`), então
   o catálogo é idêntico em toda execução. Há itens raros, esgotados, com preço anterior e edições
-  variadas, para exercitar filtros, paginação e as próximas fatias.
+  variadas, para exercitar filtros, paginação checkout e tempo real.
 - **Cenários** (`src/mocks/scenarios.ts`): latência e falhas determinísticas (sem `Math.random`).
   Lista e uso no README. Os testes usam os mesmos ids.
 - **Controles** (`src/mocks/handlers/control.ts`): `POST /api/__mock/scenario/:id`,
@@ -310,6 +312,57 @@ campos, ações laranja) e funcionam em uma coluna no mobile.
   (ou a chave `kurio:mock-scenario`, a mesma usada por `?scenario=`). A UI nunca é manipulada
   diretamente.
 - Traces e screenshots só em falha; relatório HTML em `playwright-report/`.
+- Specs: `catalog`, `nft-detail`, `auth`, `cart`, `checkout`, `realtime`, `profile`, `a11y` e `visual`,
+  cobrindo os 12 itens da seção 9 do enunciado. Os de tempo real passam pelo `socket.io-client` (os
+  eventos são disparados pelos endpoints de controle do mock, nunca pela UI) e esperam o socket conectar
+  (`html[data-realtime="online"]`) antes de mudar o servidor.
+- **Regressão visual** (`visual.spec.ts`): início, detalhe, carrinho e pagamento, página inteira, nos
+  dois projetos, com fixtures determinísticas, animações desligadas e imagens forçadas a carregar.
+  As baselines (`e2e/visual.spec.ts-snapshots/`) foram geradas no Windows; em outro SO a renderização
+  de fontes muda, então gere as do SO com `pnpm test:e2e:update-visual`.
+- **Tempo**: o relógio não é congelado; os cenários sensíveis a tempo usam atrasos fixos do mock
+  (liquidação em 2,5 s, timeout de 5 s na criação do pedido) e o disparo dos eventos é controlado
+  pelos endpoints de controle. `page.clock` ficou de fora para não interferir no heartbeat do Socket.IO.
+- **Estabilidade**: `openWithScenario` espera o mock aplicar `?scenario`/`?reset` antes de seguir
+  (sem isso, uma navegação imediata perdia o cenário em execuções paralelas).
+
+## Lighthouse
+
+`pnpm lighthouse` faz o build e roda `scripts/lighthouse.mjs`: `vite preview` com mocks no cenário
+padrão, Início (`/`) e Detalhe (`/nfts/emerald-ape-042`), perfis mobile (padrão do Lighthouse) e desktop
+(`--preset=desktop`), 3 execuções cada, mediana por categoria e métrica. Saída versionada:
+`lighthouse/summary.md` (tabela + ambiente), `lighthouse/summary.json` (todas as execuções) e o
+HTML/JSON da execução mediana em `lighthouse/reports/`. Usa o Lighthouse 13 do projeto e o Chromium
+do Playwright (ou `CHROME_PATH`).
+
+Resultado (mediana, ver `lighthouse/summary.md` para o ambiente):
+
+| Página  | Perfil  | Perf. | A11y | Best Pr. | SEO |     LCP |   CLS |    TBT |
+| ------- | ------- | ----: | ---: | -------: | --: | ------: | ----: | -----: |
+| Início  | mobile  |    74 |  100 |      100 | 100 | 4613 ms | 0.016 | 391 ms |
+| Início  | desktop |    99 |  100 |      100 | 100 | 1011 ms | 0.002 |   1 ms |
+| Detalhe | mobile  |    72 |  100 |      100 | 100 | 4730 ms | 0.000 | 436 ms |
+| Detalhe | desktop |    97 |  100 |      100 | 100 | 1205 ms | 0.007 |  14 ms |
+
+**Abaixo da meta: Performance mobile (72–74, meta 90).** Causa principal identificada nos relatórios:
+o app só pode renderizar depois que o service worker do MSW está ativo (senão as primeiras requisições
+escapariam do mock). O chunk do MSW (`browser-*.js`, ~163 KB transferidos) é o maior script da página
+e o que mais consome CPU no boot (~600 ms de 1,4 s de bootup com CPU 4× mais lenta). Somado ao app
+(~250 KB), o LCP mobile fica em ~4,6 s, quase todo como "element render delay". Em produção real (API
+de verdade, sem MSW no navegador) esse custo não existiria. O enunciado pede a auditoria com os mocks e
+sem simplificações exclusivas para a nota, então não foi removido.
+
+Melhorias feitas durante a auditoria:
+
+- mocks e app passaram a ser baixados em paralelo (`src/main.tsx`), em vez de em sequência;
+- CLS do detalhe desktop de 0,37 → ~0: a imagem principal da galeria ganhou largura explícita, e o
+  `main` tem altura mínima de uma tela para o rodapé não "pular" quando o conteúdo chega;
+- `favicon.svg` (o 404 do `/favicon.ico` derrubava Best Practices) e `robots.txt` (o rewrite da SPA
+  devolvia o HTML e derrubava SEO);
+- pontos do carrossel com área de toque de 24 px (target size).
+
+Não feito por falta de tempo: pré-render de um shell estático no `index.html` (LCP mais cedo) e
+divisão do chunk do MSW por recurso.
 
 ## UX, acessibilidade e desvios do Figma
 
@@ -322,7 +375,7 @@ campos, ações laranja) e funcionam em uma coluna no mobile.
   sociais, botão central de scan no mobile): aparecem como no layout, mas sem link, com `title` e texto
   para leitores de tela "(disponível em breve)". A newsletter valida o e-mail e informa que não está
   disponível, sem simular sucesso.
-- **"Conectar e finalizar"** fica visivelmente indisponível até a fatia de pagamento.
+- **"Conectar e finalizar"** leva ao pagamento; fica indisponível (`aria-disabled`) enquanto o carrinho tem avisos.
 - **Checkbox dos filtros**: o Figma indica seleção só pela cor; foi adicionado um marcador com ✓
   (estado não depende só de cor). O input nativo fica acessível (`sr-only`) com foco visível.
 - **Preço anterior** aparece riscado (o Figma usa só cor) e tem rótulo "Preço anterior" para leitores
@@ -368,7 +421,7 @@ campos, ações laranja) e funcionam em uma coluna no mobile.
 - **Mostrar senha**: o Figma desenha só o olho riscado; o estado "visível" usa um olho aberto.
 - **Login social e "Esqueceu a senha?"** estão fora do escopo: aparecem desabilitados/indisponíveis.
 - **Header logado**: o layout não tem esse estado. O botão "Entrar" vira o primeiro nome do usuário, com
-  menu (Perfil, Favoritos, Sair). `/perfil` é provisório até a fatia de perfil.
+  menu (Perfil, Favoritos, Sair). Carteiras também está no menu.
 - **Toasts** (Sonner) ficam embaixo, acima da tab bar e da barra de compra no mobile, para não cobrir
   ações.
 
