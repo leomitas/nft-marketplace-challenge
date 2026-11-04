@@ -97,4 +97,44 @@
   body {
     @apply bg-background font-sans text-foreground antialiased;
   }
+  /* Tailwind v4 preflight resets buttons to cursor: default; restore the affordance */
+  :where(
+      button,
+      [role='button'],
+      [role='tab'],
+      [role='menuitem'],
+      [role='option'],
+      [role='checkbox'],
+      [role='radio'],
+      [role='switch'],
+      [role='slider'],
+      a[href],
+      summary,
+      select,
+      input[type='checkbox'],
+      input[type='radio'],
+      input[type='range'],
+      input[type='file'],
+      input[type='submit'],
+      input[type='button'],
+      input[type='reset']
+    ) {
+    cursor: pointer;
+  }
+  :where(
+      :disabled,
+      [aria-disabled='true'],
+      [data-disabled]
+    ):where(
+      button,
+      [role],
+      a,
+      summary,
+      label,
+      select,
+      input,
+      textarea
+    ) {
+    cursor: not-allowed;
+  }
 }
