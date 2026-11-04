@@ -35,3 +35,6 @@ dist-ssr
 /playwright/.cache/
 /.lighthouseci/
 /.playwright-mcp/
+
+# TanStack Router generator temp files
+/.tanstack/
