@@ -13,6 +13,8 @@ export const SCENARIOS = {
   'server-error': 'Erro 500 no catálogo',
   'network-error': 'Falha de conexão no catálogo',
   'flaky-catalog': 'Catálogo falha 2 vezes e o retry automático recupera',
+  'favorites-error': 'Salvar/remover favorito responde 500 (rollback)',
+  'auth-unavailable': 'Login e cadastro respondem 503',
 } as const
 export type ScenarioId = keyof typeof SCENARIOS
 
@@ -89,4 +91,20 @@ export function errorResponse(
   fields?: Record<string, string>,
 ) {
   return HttpResponse.json({ error: { code, message, fields } }, { status })
+}
+
+/** Failure injected into favorite mutations. */
+export function favoritesFailure() {
+  if (getScenario() === 'favorites-error') {
+    return errorResponse(500, 'INTERNAL', 'Não foi possível atualizar seus favoritos.')
+  }
+  return undefined
+}
+
+/** Failure injected into login and sign-up. */
+export function authFailure() {
+  if (getScenario() === 'auth-unavailable') {
+    return errorResponse(503, 'UNAVAILABLE', 'Autenticação temporariamente indisponível.')
+  }
+  return undefined
 }

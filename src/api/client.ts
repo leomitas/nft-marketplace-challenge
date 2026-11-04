@@ -1,5 +1,6 @@
 import axios, { isAxiosError } from 'axios'
 import { apiErrorSchema } from './contracts/common'
+import { tokenStore } from './token-store'
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api',
@@ -33,6 +34,13 @@ export class ApiError extends Error {
   get isTransient() {
     return this.kind === 'network' || this.kind === 'timeout' || (this.status ?? 0) >= 500
   }
+
+  /** The request carried a session that the server no longer accepts. */
+  get isSessionLost() {
+    return (
+      this.status === 401 && (this.code === 'SESSION_EXPIRED' || this.code === 'UNAUTHENTICATED')
+    )
+  }
 }
 
 export function toApiError(error: unknown): ApiError {
@@ -62,4 +70,27 @@ export function toApiError(error: unknown): ApiError {
   )
 }
 
-api.interceptors.response.use(undefined, (error) => Promise.reject(toApiError(error)))
+api.interceptors.request.use((config) => {
+  const token = tokenStore.get()
+  if (token) config.headers.set('Authorization', `Bearer ${token}`)
+  return config
+})
+
+type SessionLostHandler = (reason: 'expired' | 'invalid') => void
+let onSessionLost: SessionLostHandler | null = null
+
+/** The auth feature registers what to do when an authenticated call gets a 401. */
+export function setSessionLostHandler(handler: SessionLostHandler | null) {
+  onSessionLost = handler
+}
+
+api.interceptors.response.use(undefined, (error) => {
+  const apiError = toApiError(error)
+  // Only calls made with a token can "lose" a session; a failed login is just a 401
+  const headers = isAxiosError(error) ? error.config?.headers : undefined
+  const sentToken = Boolean(headers?.Authorization) && !headers?.['X-Session-Probe']
+  if (apiError.isSessionLost && sentToken) {
+    onSessionLost?.(apiError.code === 'SESSION_EXPIRED' ? 'expired' : 'invalid')
+  }
+  return Promise.reject(apiError)
+})

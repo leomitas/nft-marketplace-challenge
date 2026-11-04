@@ -4,6 +4,7 @@ import {
   catalogPageSchema,
   featuredSchema,
   nftDetailSchema,
+  reviewListSchema,
   type CatalogQuery,
 } from './contracts/catalog'
 
@@ -25,4 +26,9 @@ export async function getFeatured(signal?: AbortSignal) {
 export async function getNft(id: string, signal?: AbortSignal) {
   const { data } = await api.get(`/nfts/${encodeURIComponent(id)}`, { signal })
   return nftDetailSchema.parse(data)
+}
+
+export async function getReviews(id: string, signal?: AbortSignal) {
+  const { data } = await api.get(`/nfts/${encodeURIComponent(id)}/reviews`, { signal })
+  return reviewListSchema.parse(data)
 }

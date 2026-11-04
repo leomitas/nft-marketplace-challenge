@@ -1,5 +1,5 @@
 import { keepPreviousData, queryOptions } from '@tanstack/react-query'
-import { getCatalogFacets, getFeatured, getNft, listNfts } from '@/api/catalog'
+import { getCatalogFacets, getFeatured, getNft, getReviews, listNfts } from '@/api/catalog'
 import type { CatalogQuery } from '@/api/contracts/catalog'
 
 export const catalogKeys = {
@@ -9,6 +9,7 @@ export const catalogKeys = {
   facets: () => [...catalogKeys.all, 'facets'] as const,
   featured: () => [...catalogKeys.all, 'featured'] as const,
   detail: (id: string) => [...catalogKeys.all, 'detail', id] as const,
+  reviews: (id: string) => [...catalogKeys.all, 'reviews', id] as const,
 }
 
 /**
@@ -41,4 +42,11 @@ export const nftDetailQuery = (id: string) =>
   queryOptions({
     queryKey: catalogKeys.detail(id),
     queryFn: ({ signal }) => getNft(id, signal),
+  })
+
+export const reviewsQuery = (id: string) =>
+  queryOptions({
+    queryKey: catalogKeys.reviews(id),
+    queryFn: ({ signal }) => getReviews(id, signal),
+    staleTime: 5 * 60_000,
   })

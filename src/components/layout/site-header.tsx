@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { cn } from 'cn'
 import cartIcon from '@/assets/figma/icon-cart.svg'
-import loginIcon from '@/assets/figma/icon-login.svg'
+import { AccountMenu } from './account-menu'
 import { HeaderSearch } from './header-search'
 import { SoonBadge } from './soon'
 
@@ -58,19 +58,12 @@ export function SiteHeader({ active, divider = true }: { active: Section; divide
 
         <div className="flex items-center gap-7">
           <HeaderSearch />
-          {/* Cart and sign-in arrive with their slices; until then they are visibly unavailable */}
+          {/* The cart arrives with its slice; until then it is visibly unavailable */}
           <span className="relative opacity-60" title="Carrinho disponível em breve">
             <img src={cartIcon} alt="" width={24} height={24} />
             <span className="sr-only">Carrinho (disponível em breve)</span>
           </span>
-          <span
-            className="flex h-[35px] w-[100px] cursor-not-allowed items-center justify-center gap-1 rounded-[6px] bg-primary text-base font-medium text-ink opacity-60"
-            title="Login disponível em breve"
-          >
-            <img src={loginIcon} alt="" width={20} height={20} />
-            Entrar
-            <span className="sr-only">(disponível em breve)</span>
-          </span>
+          <AccountMenu />
         </div>
       </div>
       {divider && <hr className="mt-1 border-t-[0.3px] border-foreground/60" />}

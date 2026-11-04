@@ -61,6 +61,7 @@ export const nftSummarySchema = z.object({
   previousPriceEth: ethAmountSchema.nullable(),
   rarity: z.enum(['common', 'rare']),
   image: nftImageSchema,
+  /** Totals across every edition tier; `available === 0` means sold out. */
   editions: z.object({
     total: z.number().int().positive(),
     available: z.number().int().nonnegative(),
@@ -106,8 +107,53 @@ export type CatalogFacets = z.infer<typeof catalogFacetsSchema>
 export const featuredSchema = z.object({ spotlight: nftSummarySchema })
 export type Featured = z.infer<typeof featuredSchema>
 
+export const EDITION_TIERS = {
+  '1-1': '1/1',
+  '1-10': '1/10',
+  '1-50': '1/50',
+  open: 'ABERTA',
+} as const
+export const editionIdSchema = z.enum(keys(EDITION_TIERS))
+export type EditionId = z.infer<typeof editionIdSchema>
+
+/** Each NFT is sold in edition tiers with their own price and stock (Figma "Edição" chips). */
+export const editionSchema = z.object({
+  id: editionIdSchema,
+  label: z.string(),
+  priceEth: ethAmountSchema,
+  supply: z.number().int().positive(),
+  available: z.number().int().nonnegative(),
+})
+export type Edition = z.infer<typeof editionSchema>
+
+/** Gallery views: same artwork, different framing (`focus` = CSS object-position + zoom). */
+export const galleryImageSchema = nftImageSchema.extend({
+  focus: z.object({ x: z.number(), y: z.number(), zoom: z.number().min(1) }),
+})
+export type GalleryImage = z.infer<typeof galleryImageSchema>
+
 export const nftDetailSchema = nftSummarySchema.extend({
-  description: z.string(),
+  about: z.string(),
+  description: z.array(z.string()),
   creator: z.string(),
+  collectionName: z.string(),
+  attributes: z.array(z.string()),
+  editionOptions: z.array(editionSchema).min(1),
+  /** Upper bound per order, regardless of stock. */
+  maxPerOrder: z.number().int().positive(),
+  gallery: z.array(galleryImageSchema).min(1),
+  rating: z.object({ average: z.number().min(0).max(5), count: z.number().int().nonnegative() }),
+  contract: z.object({ address: z.string(), standard: z.string() }),
+  royaltyPercent: z.number().nonnegative(),
 })
 export type NftDetail = z.infer<typeof nftDetailSchema>
+
+export const reviewSchema = z.object({
+  id: z.string(),
+  author: z.string(),
+  rating: z.number().int().min(1).max(5),
+  comment: z.string(),
+  createdAt: z.iso.datetime(),
+})
+export const reviewListSchema = z.object({ items: z.array(reviewSchema) })
+export type Review = z.infer<typeof reviewSchema>

@@ -1,14 +1,39 @@
-import type { CollectionId, NetworkId, NftSummary } from '@/api/contracts/catalog'
+import Big from 'big.js'
+import {
+  EDITION_TIERS,
+  NETWORKS,
+  type CollectionId,
+  type Edition,
+  type EditionId,
+  type GalleryImage,
+  type NetworkId,
+  type NftDetail,
+  type NftSummary,
+} from '@/api/contracts/catalog'
 
 /** Fixed clock for fixtures, so dates and the "new releases" tab are reproducible. */
 export const FIXTURE_NOW = new Date('2026-10-01T12:00:00.000Z')
 
+export const MAX_PER_ORDER = 5
+
 // The Figma file ships only 4 artworks; every NFT reuses one of them.
 const ARTWORKS = {
-  green: 'Retrato de um macaco com óculos escuros redondos e jaqueta verde de colégio',
-  hat: 'Retrato de um gorila com chapéu bucket verde e moletom lilás',
-  dark: 'Retrato de um macaco de pelagem escura com blusa de gola alta verde e blazer claro',
-  orange: 'Retrato de um orangotango com fones de ouvido verdes e camisa creme',
+  green: {
+    alt: 'Retrato de um macaco com óculos escuros redondos e jaqueta verde de colégio',
+    traits: ['Óculos', 'Jaqueta verde'],
+  },
+  hat: {
+    alt: 'Retrato de um gorila com chapéu bucket verde e moletom lilás',
+    traits: ['Chapéu', 'Moletom lilás'],
+  },
+  dark: {
+    alt: 'Retrato de um macaco de pelagem escura com blusa de gola alta verde e blazer claro',
+    traits: ['Gola alta', 'Blazer'],
+  },
+  orange: {
+    alt: 'Retrato de um orangotango com fones de ouvido verdes e camisa creme',
+    traits: ['Fones', 'Camisa creme'],
+  },
 } as const
 type Artwork = keyof typeof ARTWORKS
 
@@ -16,16 +41,26 @@ function image(art: Artwork) {
   return {
     src: `/nfts/ape-${art}-960.webp`,
     srcSet: `/nfts/ape-${art}-480.webp 480w, /nfts/ape-${art}-960.webp 960w`,
-    alt: ARTWORKS[art],
+    alt: ARTWORKS[art].alt,
   }
 }
 
-/** Extra fields only the mock needs (ranking, tabs), kept out of the public contract. */
-export type NftRecord = NftSummary & {
-  trendingScore: number
-  description: string
-  creator: string
+// Gallery: the full piece plus close-up views of the same artwork
+function gallery(art: Artwork): GalleryImage[] {
+  const base = image(art)
+  return [
+    { ...base, focus: { x: 50, y: 50, zoom: 1 } },
+    { ...base, alt: `Detalhe do rosto. ${base.alt}`, focus: { x: 50, y: 32, zoom: 1.8 } },
+    { ...base, alt: `Detalhe da roupa. ${base.alt}`, focus: { x: 50, y: 88, zoom: 1.8 } },
+    { ...base, alt: `Detalhe do fundo. ${base.alt}`, focus: { x: 12, y: 15, zoom: 2.2 } },
+  ]
 }
+
+/**
+ * Stored shape: the public detail contract plus fields only the mock uses (ranking).
+ * The summary's `editions` totals are derived from `editionOptions` when serializing.
+ */
+export type NftRecord = Omit<NftDetail, 'editions'> & { trendingScore: number; art: Artwork }
 
 type Seed = {
   name: string
@@ -35,6 +70,7 @@ type Seed = {
   previous?: string
   art: Artwork
   rare?: boolean
+  /** Base stock: [supply, available]. available 0 = every tier sold out. */
   editions?: [total: number, available: number]
   trending?: number
 }
@@ -153,7 +189,7 @@ const NETWORK_IDS: NetworkId[] = ['ethereum', 'polygon', 'solana']
 const ART_IDS: Artwork[] = ['green', 'hat', 'dark', 'orange']
 
 /** Small seeded PRNG (mulberry32): same seed, same catalog on every run. */
-function prng(seed: number) {
+export function prng(seed: number) {
   return () => {
     seed = (seed + 0x6d2b79f5) | 0
     let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
@@ -162,6 +198,7 @@ function prng(seed: number) {
   }
 }
 
+// Keep the call order of `rand()` unchanged: tests rely on the generated catalog.
 function generated(count: number): Seed[] {
   const rand = prng(42)
   const pick = <T>(list: readonly T[]) => list[Math.floor(rand() * list.length)]
@@ -182,17 +219,58 @@ function generated(count: number): Seed[] {
   })
 }
 
+/** Price multiplier and supply of each edition tier, relative to the 1/50 base price. */
+const TIER_RULES: Record<EditionId, { multiplier: string; supply: number }> = {
+  '1-1': { multiplier: '5', supply: 1 },
+  '1-10': { multiplier: '2', supply: 10 },
+  '1-50': { multiplier: '1', supply: 50 },
+  open: { multiplier: '0.5', supply: 500 },
+}
+
+function editionOptions(seed: Seed, index: number): Edition[] {
+  const [, baseAvailable] = seed.editions ?? [10, 6]
+  const soldOut = baseAvailable === 0
+  const available: Record<EditionId, number> = {
+    // Most 1/1 pieces are already sold: exercises the "edition unavailable" state
+    '1-1': soldOut || index % 3 !== 1 ? 0 : 1,
+    '1-10': soldOut ? 0 : Math.min(10, baseAvailable + 1),
+    '1-50': soldOut ? 0 : baseAvailable,
+    open: soldOut ? 0 : 500 - ((index * 37) % 300),
+  }
+  return (Object.keys(TIER_RULES) as EditionId[]).map((id) => ({
+    id,
+    label: EDITION_TIERS[id],
+    priceEth: new Big(seed.price).times(TIER_RULES[id].multiplier).toFixed(2),
+    supply: TIER_RULES[id].supply,
+    available: available[id],
+  }))
+}
+
+export function reviewCount(index: number) {
+  return index === 0 ? 19 : 3 + ((index * 5) % 17)
+}
+
+function hexFrom(index: number, length: number) {
+  const rand = prng(1000 + index)
+  return Array.from({ length }, () => Math.floor(rand() * 16).toString(16))
+    .join('')
+    .toUpperCase()
+}
+
 function toRecord(seed: Seed, index: number): NftRecord {
-  const [total, available] = seed.editions ?? [10, 6]
   // One listing every ~19h going back from FIXTURE_NOW keeps the "recent" order stable
   const listedAt = new Date(FIXTURE_NOW.getTime() - index * 19 * 3_600_000)
   const id = seed.name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
+  const noun = seed.name.split(' ')[1]
+  const network = NETWORKS[seed.network]
+  const isEmerald = index === 0
+
   return {
     id,
-    tokenId: `#${seed.name.split('#')[1]}`,
+    tokenId: `#${seed.name.split('#')[1].padStart(4, '0')}`,
     name: seed.name,
     collection: seed.collection,
     network: seed.network,
@@ -200,12 +278,32 @@ function toRecord(seed: Seed, index: number): NftRecord {
     previousPriceEth: seed.previous ?? null,
     rarity: seed.rare ? 'rare' : 'common',
     image: image(seed.art),
-    editions: { total, available },
     listedAt: listedAt.toISOString(),
     version: 1,
+    about: isEmerald
+      ? 'Um colecionável digital finalizado à mão da coleção Kurio Editions, verificado na Ethereum, com arte desbloqueável e acesso para colecionadores.'
+      : `Um colecionável digital da coleção Kurio Editions, verificado na ${network}, com procedência registrada na rede.`,
+    description: [
+      `${seed.name} é uma obra digital finalizada à mão da coleção Kurio Editions. Cada atributo fica armazenado nos metadados do token e verificado na ${network}. A obra explora identidade, movimento e luz em um mundo digital sem fronteiras.`,
+      'A propriedade inclui a arte em alta resolução, lançamentos exclusivos para colecionadores e um registro permanente de procedência registrada na rede. Nova Sato recebe 5% de direitos autorais nas vendas secundárias, apoiando novos trabalhos e lançamentos da comunidade.',
+    ],
+    creator: 'Nova Sato',
+    collectionName: `Kurio ${noun}s`,
+    attributes: isEmerald
+      ? ['Óculos', 'Esmeralda', 'Raro']
+      : [...ARTWORKS[seed.art].traits, seed.rare ? 'Raro' : 'Comum'],
+    editionOptions: editionOptions(seed, index),
+    maxPerOrder: MAX_PER_ORDER,
+    gallery: gallery(seed.art),
+    // Average is recomputed from the generated reviews when serving
+    rating: { average: 0, count: reviewCount(index) },
+    contract: {
+      address: isEmerald ? '0x7A42...19E8' : `0x${hexFrom(index, 4)}...${hexFrom(index + 500, 4)}`,
+      standard: 'ERC-721',
+    },
+    royaltyPercent: 5,
     trendingScore: seed.trending ?? 50,
-    description: `${seed.name} faz parte da coleção curada da Kurio: uma peça digital autenticada na rede, com procedência verificada e edição limitada.`,
-    creator: 'Estúdio Kurio',
+    art: seed.art,
   }
 }
 
@@ -214,3 +312,24 @@ export function createNftFixtures(): NftRecord[] {
 }
 
 export const SPOTLIGHT_NFT_ID = 'sage-nomad-009'
+
+/** Public summary: strips mock-only fields and derives the edition totals. */
+export function toSummary(record: NftRecord): NftSummary {
+  return {
+    id: record.id,
+    tokenId: record.tokenId,
+    name: record.name,
+    collection: record.collection,
+    network: record.network,
+    priceEth: record.priceEth,
+    previousPriceEth: record.previousPriceEth,
+    rarity: record.rarity,
+    image: record.image,
+    editions: {
+      total: record.editionOptions.reduce((sum, e) => sum + e.supply, 0),
+      available: record.editionOptions.reduce((sum, e) => sum + e.available, 0),
+    },
+    listedAt: record.listedAt,
+    version: record.version,
+  }
+}

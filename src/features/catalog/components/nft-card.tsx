@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import { cn } from 'cn'
 import type { NftSummary } from '@/api/contracts/catalog'
 import { Skeleton } from '@/components/ui/skeleton'
+import { FavoriteButton } from '@/features/favorites/favorite-button'
 import { formatEth } from '@/lib/money'
 
 // Desktop: flat surface-card block with a 250px artwork. Mobile: rounded gradient tile.
@@ -30,6 +31,12 @@ export function NftCard({ nft, priority = false }: { nft: NftSummary; priority?:
             RARO
           </span>
         )}
+        {/* Mobile cards carry the favorite toggle (Figma); above the stretched card link */}
+        <FavoriteButton
+          nft={nft}
+          variant="card"
+          className="absolute top-5 right-3 z-10 md:hidden"
+        />
         {soldOut && (
           <span className="absolute right-3 bottom-7 rounded-[6px] bg-ink/85 px-2 py-1 text-xs font-bold text-foreground md:bottom-9">
             Esgotado

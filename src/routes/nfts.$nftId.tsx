@@ -1,44 +1,32 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { COLLECTIONS, NETWORKS } from '@/api/contracts/catalog'
+import { z } from 'zod'
+import { editionIdSchema } from '@/api/contracts/catalog'
 import { ApiError } from '@/api/client'
 import { PageShell } from '@/components/layout/page-shell'
 import { Skeleton } from '@/components/ui/skeleton'
 import { nftDetailQuery } from '@/features/catalog/queries'
-import { formatEth } from '@/lib/money'
+import { NftDetailView } from '@/features/nft/nft-detail-view'
 
-// Minimal detail page so catalog cards already lead somewhere real. The full screen
-// (gallery, editions, quantity, favorites, buy) is built in the next slice.
 export const Route = createFileRoute('/nfts/$nftId')({
+  validateSearch: z.object({ edition: editionIdSchema.optional().catch(undefined) }),
   loader: ({ context: { queryClient }, params }) => {
     void queryClient.prefetchQuery(nftDetailQuery(params.nftId))
   },
+  // The mobile detail frame has its own buy bar instead of the tab bar
+  staticData: { hideTabBar: true },
   component: NftDetailPage,
 })
 
 function NftDetailPage() {
   const { nftId } = Route.useParams()
+  const { edition } = Route.useSearch()
+  const navigate = Route.useNavigate()
   const nft = useQuery(nftDetailQuery(nftId))
 
   return (
     <PageShell section="market" headerDivider={false}>
-      <nav aria-label="Trilha" className="text-sm text-text-secondary">
-        <Link to="/" className="underline-offset-4 hover:underline">
-          Início
-        </Link>{' '}
-        / <span aria-current="page">{nft.data?.name ?? 'NFT'}</span>
-      </nav>
-
-      {nft.isPending && (
-        <div className="grid gap-8 md:grid-cols-2" aria-busy="true" aria-label="Carregando NFT">
-          <Skeleton className="aspect-square w-full rounded-3xl" />
-          <div className="flex flex-col gap-4">
-            <Skeleton className="h-8 w-2/3" />
-            <Skeleton className="h-6 w-1/3" />
-            <Skeleton className="h-24 w-full" />
-          </div>
-        </div>
-      )}
+      {nft.isPending && <DetailSkeleton />}
 
       {nft.isError &&
         (nft.error instanceof ApiError && nft.error.status === 404 ? (
@@ -69,36 +57,41 @@ function NftDetailPage() {
         ))}
 
       {nft.data && (
-        <article className="grid gap-8 md:grid-cols-2">
-          <img
-            src={nft.data.image.src}
-            srcSet={nft.data.image.srcSet}
-            sizes="(min-width: 768px) 50vw, 100vw"
-            alt={nft.data.image.alt}
-            width={560}
-            height={560}
-            fetchPriority="high"
-            className="aspect-square w-full rounded-3xl object-cover"
-          />
-          <div className="flex flex-col gap-4">
-            <h1 className="text-[28px] leading-tight font-bold">{nft.data.name}</h1>
-            <p className="text-2xl font-bold text-text-accent">{formatEth(nft.data.priceEth)}</p>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-              <dt className="text-text-secondary">ID do token</dt>
-              <dd>{nft.data.tokenId}</dd>
-              <dt className="text-text-secondary">Coleção</dt>
-              <dd>{COLLECTIONS[nft.data.collection]}</dd>
-              <dt className="text-text-secondary">Rede</dt>
-              <dd>{NETWORKS[nft.data.network]}</dd>
-              <dt className="text-text-secondary">Edições disponíveis</dt>
-              <dd>
-                {nft.data.editions.available} de {nft.data.editions.total}
-              </dd>
-            </dl>
-            <p className="text-sm leading-6 text-text-secondary">{nft.data.description}</p>
-          </div>
-        </article>
+        <NftDetailView
+          // Remount per NFT so local state (quantity) never leaks between items
+          key={nft.data.id}
+          nft={nft.data}
+          edition={edition}
+          onEditionChange={(id) =>
+            void navigate({ search: { edition: id }, replace: true, resetScroll: false })
+          }
+        />
       )}
     </PageShell>
+  )
+}
+
+/** Same footprint as the loaded layout (gallery + details), so nothing jumps when data arrives. */
+function DetailSkeleton() {
+  return (
+    <div aria-busy="true" aria-label="Carregando NFT" className="flex flex-col gap-8 lg:flex-row">
+      <div className="hidden gap-7 md:flex">
+        <div className="flex flex-col gap-4">
+          {Array.from({ length: 4 }, (_, i) => (
+            <Skeleton key={i} className="size-[100px] rounded-[8px]" />
+          ))}
+        </div>
+        <Skeleton className="size-[444px] rounded-[6px]" />
+      </div>
+      <Skeleton className="aspect-square w-full rounded-3xl md:hidden" />
+      <div className="flex flex-1 flex-col gap-5">
+        <Skeleton className="h-8 w-2/3" />
+        <Skeleton className="h-5 w-1/3" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-7 w-1/2" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-16 w-2/3" />
+      </div>
+    </div>
   )
 }

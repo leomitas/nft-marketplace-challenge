@@ -1,18 +1,39 @@
 import type { QueryClient } from '@tanstack/react-query'
-import { createRootRouteWithContext, Link, Outlet } from '@tanstack/react-router'
+import {
+  createRootRouteWithContext,
+  HeadContent,
+  Link,
+  Outlet,
+  useMatches,
+} from '@tanstack/react-router'
 import { MobileTabBar } from '@/components/layout/mobile-tab-bar'
 import { PageShell } from '@/components/layout/page-shell'
+import { Toaster } from '@/components/ui/toaster'
+import { SessionWatcher } from '@/features/auth/session-watcher'
 
 export type RouterContext = { queryClient: QueryClient }
 
+declare module '@tanstack/react-router' {
+  interface StaticDataRouteOption {
+    /** Hides the mobile tab bar (e.g. screens with their own bottom action bar). */
+    hideTabBar?: boolean
+  }
+}
+
 export const Route = createRootRouteWithContext<RouterContext>()({
+  head: () => ({ meta: [{ title: 'Kurio · Marketplace de NFTs' }] }),
   component: RootLayout,
   notFoundComponent: NotFound,
 })
 
 function RootLayout() {
+  const hideTabBar = useMatches({
+    select: (matches) => matches.some((m) => m.staticData?.hideTabBar),
+  })
+
   return (
     <>
+      <HeadContent />
       <a
         href="#conteudo"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-[6px] focus:bg-primary focus:px-4 focus:py-2 focus:font-bold focus:text-ink"
@@ -20,7 +41,9 @@ function RootLayout() {
         Pular para o conteúdo
       </a>
       <Outlet />
-      <MobileTabBar />
+      {!hideTabBar && <MobileTabBar />}
+      <Toaster />
+      <SessionWatcher />
     </>
   )
 }
