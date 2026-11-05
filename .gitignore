@@ -38,3 +38,7 @@ dist-ssr
 
 # TanStack Router generator temp files
 /.tanstack/
+
+# Personal study / internal notes (not part of the delivery)
+/docs/ESTUDO.md
+/docs/AUDITORIA.md
