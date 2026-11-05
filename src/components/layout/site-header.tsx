@@ -13,13 +13,16 @@ export function SiteHeader({ active, divider = true }: { active: Section; divide
   return (
     <header className="hidden md:block">
       <div className="flex items-center justify-between gap-6 py-1">
-        <Link
-          to="/"
-          className="w-40 text-sm font-bold tracking-[0.1em] text-foreground"
-          aria-label="Kurio, página inicial"
-        >
-          KURIO
-        </Link>
+        {/* Fixed-width column keeps the menu centered (Figma); the link itself is only the word */}
+        <div className="w-40">
+          <Link
+            to="/"
+            className="inline-block text-sm font-bold tracking-[0.1em] text-foreground"
+            aria-label="Kurio, página inicial"
+          >
+            KURIO
+          </Link>
+        </div>
 
         <nav aria-label="Principal">
           <ul className="flex items-start gap-6 text-base lg:gap-10">
