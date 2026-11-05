@@ -4,7 +4,7 @@ import { MobilePageHeader } from '@/components/layout/mobile-page-header'
 import { PageShell } from '@/components/layout/page-shell'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CartIssues } from '@/features/cart/cart-issues'
-import { CartLineCard, CartLineRow } from '@/features/cart/cart-line'
+import { CART_TABLE_COLUMNS, CartLineCard, CartLineRow } from '@/features/cart/cart-line'
 import { CartSummary } from '@/features/cart/cart-summary'
 import { useCart, useQuote } from '@/features/cart/use-cart'
 import { RelatedCarousel } from '@/features/nft/related-carousel'
@@ -97,13 +97,13 @@ function CartContent({ cart }: { cart: Cart }) {
         <div className="hidden flex-col gap-3 md:flex">
           <div
             aria-hidden="true"
-            className="grid grid-cols-[250px_1fr_auto_100px_auto] items-center gap-4 pr-6 text-base leading-4 text-foreground"
+            className={`grid ${CART_TABLE_COLUMNS} items-center gap-x-4 pr-6 text-base leading-4 text-foreground`}
           >
             <span className="font-bold">NFTs</span>
             <span className="font-medium">Preço</span>
-            <span className="w-[110px] font-bold">Edições</span>
+            <span className="font-bold">Edições</span>
             <span className="font-medium">Total</span>
-            <span className="w-9" />
+            <span />
           </div>
           <hr className="border-foreground/30" />
           <ul aria-label="Itens do carrinho" className="flex flex-col gap-3">

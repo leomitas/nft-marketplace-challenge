@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { cn } from 'cn'
+import { useId } from 'react'
 import type { CartLine } from '@/api/contracts/cart'
 import deleteIcon from '@/assets/figma/icon-delete.svg'
 import { toast } from '@/components/ui/toaster'
@@ -42,7 +43,7 @@ function useLineActions(line: CartLine) {
 
 const limitText = (line: CartLine) =>
   line.available < line.maxPerOrder
-    ? `Apenas ${line.available} disponíveis nesta edição.`
+    ? `Apenas ${line.available} ${line.available === 1 ? 'disponível' : 'disponíveis'} nesta edição.`
     : `Limite de ${line.maxPerOrder} por pedido.`
 
 function RemoveButton({
@@ -84,19 +85,28 @@ function NftLink({ line, className }: { line: CartLine; className?: string }) {
 }
 
 /** Desktop row: NFT | price | quantity | total | remove (Figma "Cart Table"). */
+/**
+ * Column template shared by the desktop table header and every row: fixed tracks, so a row with
+ * extra content (e.g. a stock warning) can't push its columns out of line with the others.
+ */
+export const CART_TABLE_COLUMNS = 'grid-cols-[250px_minmax(0,1fr)_110px_100px_36px]'
+
 export function CartLineRow({ line }: { line: CartLine }) {
   const { max, pending, setQuantity, removeLine } = useLineActions(line)
   const stockCap = Math.min(line.available, line.maxPerOrder)
+  const limitId = useId()
+  const limit = line.quantity >= stockCap ? limitText(line) : undefined
 
   return (
     <li
       aria-busy={pending}
       className={cn(
-        'grid min-h-[70px] grid-cols-[250px_1fr_auto_100px_auto] items-center gap-4 bg-surface-card pr-6 transition-opacity',
+        'grid min-h-[70px] items-center gap-x-4 bg-surface-card pr-6 transition-opacity',
+        CART_TABLE_COLUMNS,
         pending && 'opacity-70',
       )}
     >
-      <div className="flex items-center gap-4">
+      <div className={cn('flex items-center gap-4', limit && 'row-span-2')}>
         <img
           src={line.image.src}
           srcSet={line.image.srcSet}
@@ -113,7 +123,7 @@ export function CartLineRow({ line }: { line: CartLine }) {
           <p className="text-xs text-text-secondary">Edição {line.editionLabel}</p>
         </div>
       </div>
-      <p className="text-base leading-4 font-bold text-text-secondary">
+      <p className="text-base leading-4 font-bold whitespace-nowrap text-text-secondary">
         <span className="sr-only">Preço unitário: </span>
         {formatEth(line.unitPriceEth)}
       </p>
@@ -124,13 +134,20 @@ export function CartLineRow({ line }: { line: CartLine }) {
         size="sm"
         label={`Quantidade de ${line.name}`}
         disabled={pending}
-        limitReason={line.quantity >= stockCap ? limitText(line) : undefined}
+        limitReason={limit}
+        limitId={limit ? limitId : undefined}
       />
-      <p className="text-base leading-4 font-bold text-text-accent">
+      <p className="text-base leading-4 font-bold whitespace-nowrap text-text-accent">
         <span className="sr-only">Total do item: </span>
         {formatEth(line.lineTotalEth)}
       </p>
       <RemoveButton line={line} onClick={removeLine} disabled={pending} />
+      {limit && (
+        // Own row under the quantity control, spanning to the end, so the columns above stay put
+        <p id={limitId} className="col-span-3 col-start-3 -mt-2 pb-2 text-xs text-text-secondary">
+          {limit}
+        </p>
+      )}
     </li>
   )
 }
