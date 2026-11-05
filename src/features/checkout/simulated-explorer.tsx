@@ -41,14 +41,29 @@ export function SimulatedExplorer({ orderId }: { orderId: string }) {
   }
 
   const { data } = order
-  const rows: [string, React.ReactNode][] = [
-    ['Hash', data.transaction?.hash ?? '— (ainda sem transação)'],
+  // Long unbroken values (hash, address) may break anywhere; text values wrap only between words
+  const rows: [string, React.ReactNode, 'hex'?][] = [
+    ['Hash', data.transaction?.hash ?? '— (ainda sem transação)', 'hex'],
     ['Status', STATUS[data.status]],
     ['Rede', `${NETWORKS[data.payment.network]} (simulada)`],
     ['Data', formatDate(data.updatedAt)],
-    ['De', `${data.payment.walletLabel} · ${data.payment.address}`],
+    [
+      'De',
+      <>
+        {data.payment.walletLabel} · <span className="break-all">{data.payment.address}</span>
+      </>,
+    ],
     ['Carteira', WALLET_PROVIDERS[data.payment.provider]],
-    ['Itens', data.lines.map((l) => `${l.name} ${l.editionLabel} × ${l.quantity}`).join(', ')],
+    [
+      'Itens',
+      <ul className="flex flex-col gap-1">
+        {data.lines.map((l) => (
+          <li key={l.lineId}>
+            {l.name} · {l.editionLabel} × {l.quantity}
+          </li>
+        ))}
+      </ul>,
+    ],
     ['Taxa de rede', formatEth(data.networkFeeEth)],
     ['Valor total', formatEth(data.totalEth)],
     ['Pedido', data.id],
@@ -70,10 +85,10 @@ export function SimulatedExplorer({ orderId }: { orderId: string }) {
         são o registro do pedido no servidor simulado.
       </p>
       <dl className="grid gap-x-6 gap-y-3 rounded-[10px] bg-surface-card p-5 text-sm md:grid-cols-[160px_1fr]">
-        {rows.map(([label, value]) => (
+        {rows.map(([label, value, kind]) => (
           <div key={label} className="contents">
             <dt className="text-text-secondary">{label}</dt>
-            <dd className="break-all">{value}</dd>
+            <dd className={kind === 'hex' ? 'break-all' : 'break-words'}>{value}</dd>
           </div>
         ))}
       </dl>

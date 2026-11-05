@@ -31,6 +31,9 @@ export function RelatedCarousel({
     const el = scroller.current
     if (!el) return
     const update = () => {
+      // The detail page also renders the carousel in its hidden (display: none) layout, where
+      // clientWidth is 0: dividing by it gave Infinity pages and crashed the render on resize
+      if (el.clientWidth === 0) return
       setPages(Math.max(1, Math.ceil(el.scrollWidth / el.clientWidth)))
       setPage(Math.round(el.scrollLeft / el.clientWidth))
     }
