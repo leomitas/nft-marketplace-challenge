@@ -1,2 +1,9 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Normalize line endings to LF in the repo and in every checkout (also on Windows), so
+# Prettier (endOfLine: lf) passes on a fresh clone regardless of core.autocrlf
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.webp binary
+*.woff2 binary

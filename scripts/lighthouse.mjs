@@ -5,6 +5,7 @@ import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import os from 'node:os'
+import { dirname, join } from 'node:path'
 
 const PORT = 4174
 const BASE = `http://localhost:${PORT}`
@@ -32,10 +33,21 @@ function median(values) {
 }
 
 async function startPreview() {
-  const server = spawn('pnpm', ['preview', '--port', String(PORT), '--strictPort'], {
-    shell: true,
-    stdio: 'ignore',
-  })
+  // Something already answering on the port (e.g. a leftover preview of an older build) would be
+  // audited instead of the build just made: refuse instead of measuring the wrong thing
+  const busy = await fetch(BASE).then(
+    () => true,
+    () => false,
+  )
+  if (busy) throw new Error(`port ${PORT} is already in use; stop that server and run again`)
+  // Node + vite directly (no shell): with `shell: true`, kill() only ended the shell and left the
+  // preview server running in the background
+  const viteBin = join(dirname(require.resolve('vite/package.json')), 'bin', 'vite.js')
+  const server = spawn(
+    process.execPath,
+    [viteBin, 'preview', '--port', String(PORT), '--strictPort'],
+    { stdio: 'ignore' },
+  )
   for (let i = 0; i < 60; i++) {
     try {
       if ((await fetch(BASE)).ok) return server
