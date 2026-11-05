@@ -13,6 +13,7 @@ export function QuantityStepper({
   onChange,
   size = 'lg',
   limitReason,
+  limitId,
   label = 'Quantidade',
   showLabel = false,
   disabled = false,
@@ -23,6 +24,11 @@ export function QuantityStepper({
   onChange: (value: number) => void
   size?: 'lg' | 'sm'
   limitReason?: string
+  /**
+   * Id of a limit message rendered by the parent (e.g. on its own row of a table). When set, the
+   * stepper only points `aria-describedby` at it instead of rendering `limitReason` itself.
+   */
+  limitId?: string
   label?: string
   showLabel?: boolean
   disabled?: boolean
@@ -82,7 +88,9 @@ export function QuantityStepper({
             onClick={() => onChange(value + 1)}
             disabled={disabled || atMax}
             aria-label="Aumentar quantidade"
-            aria-describedby={atMax && limitReason ? `${id}-limit` : undefined}
+            aria-describedby={
+              atMax && (limitId ?? limitReason) ? (limitId ?? `${id}-limit`) : undefined
+            }
           >
             <img
               src={plusIcon}
@@ -94,7 +102,7 @@ export function QuantityStepper({
           </button>
         </div>
       </div>
-      {atMax && limitReason && (
+      {atMax && limitReason && !limitId && (
         <p id={`${id}-limit`} className="text-xs text-text-secondary">
           {limitReason}
         </p>

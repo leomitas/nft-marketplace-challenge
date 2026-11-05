@@ -14,10 +14,10 @@ export function SiteHeader({ active, divider = true }: { active: Section; divide
     <header className="hidden md:block">
       <div className="flex items-center justify-between gap-6 py-1">
         {/* Fixed-width column keeps the menu centered (Figma); the link itself is only the word */}
-        <div className="w-40">
+        <div className="flex w-40">
           <Link
             to="/"
-            className="inline-block text-sm font-bold tracking-[0.1em] text-foreground"
+            className="text-sm font-bold tracking-[0.1em] text-foreground"
             aria-label="Kurio, página inicial"
           >
             KURIO
