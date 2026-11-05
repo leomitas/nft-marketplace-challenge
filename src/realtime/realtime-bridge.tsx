@@ -111,7 +111,9 @@ export function RealtimeBridge() {
   return (
     <p
       role="status"
-      className="fixed top-3 left-1/2 z-50 -translate-x-1/2 rounded-full border border-primary/60 bg-surface-card px-4 py-2 text-xs text-foreground shadow-lg"
+      // Full-width opaque bar above the header (sticky while scrolling): pushes the page down
+      // instead of covering the navigation
+      className="sticky top-0 z-50 border-b border-primary/60 bg-surface-card px-6 py-2 text-center text-xs text-foreground"
     >
       Tempo real desconectado. Reconectando...
     </p>

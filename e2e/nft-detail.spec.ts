@@ -91,4 +91,16 @@ test.describe('Detalhe do NFT', () => {
     await expect(page.getByRole('dialog')).toBeHidden()
     await expect(trigger).toBeFocused()
   })
+
+  test('redimensionar a janela não quebra a página (carrossel oculto)', async ({ page }) => {
+    await openWithScenario(page, '/nfts/emerald-ape-042')
+    await expect(page.getByText('Mais desta coleção').filter({ visible: true })).toBeVisible()
+    // Resizes cross the breakpoint both ways; the hidden layout's carousel has zero width
+    for (const width of [390, 1440, 768, 1280]) {
+      await page.setViewportSize({ width, height: 900 })
+      await page.waitForTimeout(150)
+    }
+    await expect(page.getByText('Something went wrong!')).toHaveCount(0)
+    await expect(page.getByText('Mais desta coleção').filter({ visible: true })).toBeVisible()
+  })
 })

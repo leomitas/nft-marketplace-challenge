@@ -41,11 +41,12 @@ function RootLayout() {
       >
         Pular para o conteúdo
       </a>
+      {/* Before the page: its disconnection bar sits above the header, in the normal flow */}
+      <RealtimeBridge />
       <Outlet />
       {!hideTabBar && <MobileTabBar />}
       <Toaster />
       <SessionWatcher />
-      <RealtimeBridge />
     </>
   )
 }

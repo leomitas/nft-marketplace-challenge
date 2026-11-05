@@ -38,6 +38,12 @@ test.describe('Regressão visual', { tag: '@visual' }, () => {
     await expect(
       page.getByRole('heading', { level: 1, name: 'Emerald Ape #042' }).first(),
     ).toBeAttached()
+    // Wait for rendered content (not just the heading in the DOM): a capture taken too early
+    // came out viewport-sized instead of the full page
+    await expect(page.getByText('1.19 ETH').filter({ visible: true }).first()).toBeVisible()
+    await expect(
+      page.getByText('Mais desta coleção').filter({ visible: true }).first(),
+    ).toBeVisible()
     await settle(page)
     await expect(page).toHaveScreenshot('detalhe.png', options)
   })
