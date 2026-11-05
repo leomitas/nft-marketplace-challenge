@@ -2,39 +2,39 @@ import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { loginRequestSchema } from '@/api/contracts/auth'
 import { TextField } from '@/components/form/text-field'
-import { apiFormErrors, focusFirstError, zodFieldErrors, type FieldErrors } from './form-errors'
+import { apiFormErrors, focusFirstError } from './form-errors'
+import { useLiveValidation } from './use-live-validation'
 import { useLogin } from './use-session'
 
 export function LoginForm({ redirect }: { redirect: string }) {
   const login = useLogin()
   const navigate = useNavigate()
-  const [errors, setErrors] = useState<FieldErrors>({})
+  const validation = useLiveValidation(loginRequestSchema)
+  const errors = validation.errors
   const [formError, setFormError] = useState<string>()
 
   return (
     <form
       noValidate
       aria-describedby={formError ? 'login-error' : undefined}
+      onChange={validation.onChange}
+      onBlur={validation.onBlur}
       onSubmit={(event) => {
         event.preventDefault()
         if (login.isPending) return
         const form = event.currentTarget
-        const values = Object.fromEntries(new FormData(form))
-        const parsed = loginRequestSchema.safeParse(values)
+        const parsed = validation.submit(form)
         setFormError(undefined)
         if (!parsed.success) {
-          const fields = zodFieldErrors(parsed.error)
-          setErrors(fields)
-          focusFirstError(form, fields)
+          focusFirstError(form, parsed.fields)
           return
         }
-        setErrors({})
         login.mutate(parsed.data, {
           // Back to where the user was (e.g. the NFT they tried to favorite)
           onSuccess: () => void navigate({ href: redirect, replace: true }),
           onError: (error) => {
             const result = apiFormErrors(error)
-            setErrors(result.fields)
+            validation.setApiErrors(result.fields)
             setFormError(result.form)
             focusFirstError(form, result.fields)
           },

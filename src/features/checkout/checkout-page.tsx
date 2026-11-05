@@ -14,7 +14,8 @@ import {
 import { TextField } from '@/components/form/text-field'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from '@/components/ui/toaster'
-import { zodFieldErrors, type FieldErrors } from '@/features/auth/form-errors'
+import type { FieldErrors } from '@/features/auth/form-errors'
+import { useLiveValidation } from '@/features/auth/use-live-validation'
 import { CartIssues } from '@/features/cart/cart-issues'
 import { Totals } from '@/features/cart/cart-summary'
 import { useCart, useQuote } from '@/features/cart/use-cart'
@@ -110,7 +111,8 @@ function CheckoutForm({
   const connectRef = useRef<HTMLButtonElement>(null)
   const submitRef = useRef<HTMLButtonElement>(null)
   const [draft, setDraft] = useState<CheckoutDraft>(() => checkoutDraft.load(user.id))
-  const [errors, setErrors] = useState<FieldErrors>({})
+  const validation = useLiveValidation(collectorSchema)
+  const errors = validation.errors
   const [review, setReview] = useState<ReviewPayload | null>(null)
   const connect = useConnectWallet()
   const disconnect = useDisconnectWallet()
@@ -139,29 +141,31 @@ function CheckoutForm({
     checkoutDraft.save(user.id, next)
   }
   const setField = (name: keyof Collector) => (value: string) => {
+    // Revalidation happens in the form's onChange (useLiveValidation)
     update({ collector: { [name]: value } })
-    if (errors[name]) setErrors(({ [name]: _removed, ...rest }) => rest)
   }
 
   const onConnect = () => {
     if (!wallet || !provider || !network) return
-    setErrors(({ connection: _removed, ...rest }) => rest)
+    validation.setError('connection')
     connect.mutate(
       { walletId: wallet.id, provider, network },
       {
         onSuccess: () => toast.success(`${WALLET_PROVIDERS[provider]} conectada.`),
-        onError: (error) => setErrors((prev) => ({ ...prev, connection: error.message })),
+        onError: (error) => validation.setError('connection', error.message),
       },
     )
   }
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const parsed = collectorSchema.safeParse(collector)
-    const fields: FieldErrors = parsed.success ? {} : zodFieldErrors(parsed.error)
+    const parsed = validation.submit(event.currentTarget)
+    const fields: FieldErrors = parsed.success ? {} : { ...parsed.fields }
+    // Not part of the collector schema: checked here and shown next to the wallet controls
     if (!wallet) fields.wallet = 'Cadastre uma carteira para pagar.'
     else if (!connected) fields.connection = 'Conecte a carteira selecionada para continuar.'
-    setErrors(fields)
+    if (fields.wallet) validation.setError('wallet', fields.wallet)
+    if (fields.connection) validation.setError('connection', fields.connection)
     const first = Object.keys(fields)[0]
     if (first === 'connection') {
       connectRef.current?.focus()
@@ -183,6 +187,8 @@ function CheckoutForm({
       <form
         ref={formRef}
         noValidate
+        onChange={validation.onChange}
+        onBlur={validation.onBlur}
         onSubmit={onSubmit}
         aria-label="Pagamento"
         className="grid gap-8 pb-28 md:grid-cols-[minmax(0,1fr)_352px] md:gap-7 md:pb-0"
@@ -382,7 +388,7 @@ function CheckoutForm({
           onClose={() => setReview(null)}
           onWalletDisconnected={() => {
             setReview(null)
-            setErrors({ connection: 'A carteira foi desconectada. Conecte novamente.' })
+            validation.setError('connection', 'A carteira foi desconectada. Conecte novamente.')
             connectRef.current?.focus()
           }}
         />
