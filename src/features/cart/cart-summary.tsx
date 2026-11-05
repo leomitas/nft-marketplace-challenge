@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { cn } from 'cn'
-import { useId, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import type { Quote } from '@/api/contracts/cart'
 import { couponCodeSchema } from '@/api/contracts/cart'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -115,6 +115,8 @@ function CouponForm({ quote, variant }: { quote?: Quote; variant: 'desktop' | 'm
   const apply = useApplyCoupon()
   const remove = useRemoveCoupon()
   const [error, setError] = useState<string>()
+  // After the first attempt the field is validated as the user types
+  const attempted = useRef(false)
   const mobile = variant === 'mobile'
 
   if (quote?.coupon) {
@@ -146,6 +148,7 @@ function CouponForm({ quote, variant }: { quote?: Quote; variant: 'desktop' | 'm
       noValidate
       onSubmit={(event) => {
         event.preventDefault()
+        attempted.current = true
         const raw = new FormData(event.currentTarget).get('code')
         const parsed = couponCodeSchema.safeParse(raw)
         if (!parsed.success) {
@@ -183,6 +186,13 @@ function CouponForm({ quote, variant }: { quote?: Quote; variant: 'desktop' | 'm
           placeholder="Digite o código promocional..."
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${id}-error` : undefined}
+          onChange={(event) => {
+            // Once an error is shown, it follows the value: a format problem updates live and a
+            // server answer ("invalid", "expired") goes away because it was about the old code
+            if (!attempted.current) return
+            const parsed = couponCodeSchema.safeParse(event.target.value)
+            setError(parsed.success ? undefined : parsed.error.issues[0]?.message)
+          }}
           className="min-w-0 flex-1 bg-transparent text-xs leading-4 text-foreground uppercase placeholder:text-brand-secondary placeholder:normal-case focus:outline-none"
         />
         <button

@@ -9,12 +9,8 @@ import {
 } from '@/api/contracts/profile'
 import { TextField } from '@/components/form/text-field'
 import { toast } from '@/components/ui/toaster'
-import {
-  apiFormErrors,
-  focusFirstError,
-  zodFieldErrors,
-  type FieldErrors,
-} from '@/features/auth/form-errors'
+import { apiFormErrors, focusFirstError } from '@/features/auth/form-errors'
+import { useLiveValidation } from '@/features/auth/use-live-validation'
 import {
   useChangePassword,
   useRemoveAvatar,
@@ -38,7 +34,8 @@ export function FormMessage({ id, message }: { id: string; message?: string }) {
 export function ProfileForm({ user }: { user: User }) {
   const id = useId()
   const update = useUpdateProfile()
-  const [errors, setErrors] = useState<FieldErrors>({})
+  const validation = useLiveValidation(profileUpdateSchema)
+  const errors = validation.errors
   const [formError, setFormError] = useState<string>()
 
   return (
@@ -48,24 +45,23 @@ export function ProfileForm({ user }: { user: User }) {
       </h2>
       <form
         noValidate
+        onChange={validation.onChange}
+        onBlur={validation.onBlur}
         onSubmit={(event) => {
           event.preventDefault()
           if (update.isPending) return
           const form = event.currentTarget
-          const parsed = profileUpdateSchema.safeParse(Object.fromEntries(new FormData(form)))
+          const parsed = validation.submit(form)
           setFormError(undefined)
           if (!parsed.success) {
-            const fields = zodFieldErrors(parsed.error)
-            setErrors(fields)
-            focusFirstError(form, fields)
+            focusFirstError(form, parsed.fields)
             return
           }
-          setErrors({})
           update.mutate(parsed.data, {
             onSuccess: () => toast.success('Perfil atualizado.'),
             onError: (error) => {
               const result = apiFormErrors(error)
-              setErrors(result.fields)
+              validation.setApiErrors(result.fields)
               // Field messages already explain the problem; the form message is for the rest
               setFormError(Object.keys(result.fields).length ? undefined : result.form)
               focusFirstError(form, result.fields)
@@ -222,7 +218,8 @@ const passwordFormSchema = passwordChangeSchema
 export function PasswordForm() {
   const id = useId()
   const change = useChangePassword()
-  const [errors, setErrors] = useState<FieldErrors>({})
+  const validation = useLiveValidation(passwordFormSchema)
+  const errors = validation.errors
   const [formError, setFormError] = useState<string>()
 
   return (
@@ -232,28 +229,29 @@ export function PasswordForm() {
       </h2>
       <form
         noValidate
+        onChange={validation.onChange}
+        onBlur={validation.onBlur}
         onSubmit={(event) => {
           event.preventDefault()
           if (change.isPending) return
           const form = event.currentTarget
-          const parsed = passwordFormSchema.safeParse(Object.fromEntries(new FormData(form)))
+          const parsed = validation.submit(form)
           setFormError(undefined)
           if (!parsed.success) {
-            const fields = zodFieldErrors(parsed.error)
-            setErrors(fields)
-            focusFirstError(form, fields)
+            focusFirstError(form, parsed.fields)
             return
           }
-          setErrors({})
           const { confirmPassword: _confirm, ...body } = parsed.data
           change.mutate(body, {
             onSuccess: () => {
               form.reset()
+              // Empty form again: nothing is "wrong" until the next attempt
+              validation.reset()
               toast.success('Senha alterada.')
             },
             onError: (error) => {
               const result = apiFormErrors(error)
-              setErrors(result.fields)
+              validation.setApiErrors(result.fields)
               setFormError(Object.keys(result.fields).length ? undefined : result.form)
               focusFirstError(form, result.fields)
             },

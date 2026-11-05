@@ -3,7 +3,8 @@ import { useState } from 'react'
 import { z } from 'zod'
 import { registerRequestSchema } from '@/api/contracts/auth'
 import { TextField } from '@/components/form/text-field'
-import { apiFormErrors, focusFirstError, zodFieldErrors, type FieldErrors } from './form-errors'
+import { apiFormErrors, focusFirstError } from './form-errors'
+import { useLiveValidation } from './use-live-validation'
 import { useRegister } from './use-session'
 
 // The API contract plus the confirmation field, which only exists in the form
@@ -19,31 +20,31 @@ const fieldClass = 'md:[&_input]:h-10 md:[&_input]:rounded-[5px]'
 export function RegisterForm({ redirect }: { redirect: string }) {
   const register = useRegister()
   const navigate = useNavigate()
-  const [errors, setErrors] = useState<FieldErrors>({})
+  const validation = useLiveValidation(registerFormSchema)
+  const errors = validation.errors
   const [formError, setFormError] = useState<string>()
 
   return (
     <form
       noValidate
+      onChange={validation.onChange}
+      onBlur={validation.onBlur}
       onSubmit={(event) => {
         event.preventDefault()
         if (register.isPending) return
         const form = event.currentTarget
-        const parsed = registerFormSchema.safeParse(Object.fromEntries(new FormData(form)))
+        const parsed = validation.submit(form)
         setFormError(undefined)
         if (!parsed.success) {
-          const fields = zodFieldErrors(parsed.error)
-          setErrors(fields)
-          focusFirstError(form, fields)
+          focusFirstError(form, parsed.fields)
           return
         }
-        setErrors({})
         const { confirmPassword: _confirm, ...body } = parsed.data
         register.mutate(body, {
           onSuccess: () => void navigate({ href: redirect, replace: true }),
           onError: (error) => {
             const result = apiFormErrors(error)
-            setErrors(result.fields)
+            validation.setApiErrors(result.fields)
             setFormError(result.form)
             focusFirstError(form, result.fields)
           },

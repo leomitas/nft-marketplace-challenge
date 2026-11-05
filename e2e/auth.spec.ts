@@ -124,4 +124,49 @@ test.describe('Autenticação e sessão', () => {
     )
     await expect(page.getByRole('dialog').getByLabel('E-mail')).toHaveValue(USERS.ana.email)
   })
+
+  test('erros de validação acompanham a correção do usuário', async ({ page }) => {
+    await openWithScenario(page, '/cadastro')
+    const dialog = page.getByRole('dialog')
+    const password = dialog.getByLabel('Senha', { exact: true })
+    const submit = dialog.getByRole('button', { name: /Criar (conta|perfil)/ })
+
+    await dialog.getByLabel('Nome de usuário').fill('nova.pessoa')
+    await dialog.getByLabel('E-mail').fill('nova@kurio.dev')
+    await password.fill('12345678')
+    await dialog.getByLabel('Confirmar senha').fill('12345678a')
+    await submit.click()
+    await expect(password).toHaveAttribute('aria-invalid', 'true')
+    await expect(password).toHaveAccessibleDescription('Inclua ao menos uma letra.')
+
+    // Typing the missing letter clears the error right away, without submitting again
+    await password.pressSequentially('a')
+    await expect(dialog.getByText('Inclua ao menos uma letra.')).toHaveCount(0)
+    await expect(password).not.toHaveAttribute('aria-invalid', 'true')
+    // ...and the confirmation, which now matches, is valid too
+    await expect(dialog.getByText('As senhas não coincidem.')).toHaveCount(0)
+
+    // The message follows the missing requirement as the value changes
+    await password.fill('abcdefgh')
+    await expect(password).toHaveAccessibleDescription('Inclua ao menos um número.')
+    await password.fill('abc1')
+    await expect(password).toHaveAccessibleDescription('A senha precisa ter ao menos 8 caracteres.')
+    await expect(dialog.getByText('As senhas não coincidem.')).toBeVisible()
+
+    // Fixed again: the form submits normally
+    await password.fill('12345678a')
+    await expect(password).not.toHaveAttribute('aria-invalid', 'true')
+    await submit.click()
+    await expect(page).toHaveURL(/\/$/)
+  })
+
+  test('campo validado ao sair dele, sem esperar o envio', async ({ page }) => {
+    await openWithScenario(page, '/login')
+    const email = page.getByRole('dialog').getByLabel('E-mail')
+    await email.fill('ana@')
+    await email.blur()
+    await expect(email).toHaveAccessibleDescription('Informe um e-mail válido.')
+    await email.pressSequentially('kurio.dev')
+    await expect(email).not.toHaveAttribute('aria-invalid', 'true')
+  })
 })

@@ -9,12 +9,8 @@ import {
 } from '@/api/contracts/wallets'
 import { TextField } from '@/components/form/text-field'
 import { toast } from '@/components/ui/toaster'
-import {
-  apiFormErrors,
-  focusFirstError,
-  zodFieldErrors,
-  type FieldErrors,
-} from '@/features/auth/form-errors'
+import { apiFormErrors, focusFirstError } from '@/features/auth/form-errors'
+import { useLiveValidation } from '@/features/auth/use-live-validation'
 import { FormMessage, sectionClass, submitClass } from './profile-forms'
 import { useSaveWallet } from './use-profile'
 
@@ -25,7 +21,8 @@ const selectClass =
 export function WalletForm({ role, wallet }: { role: WalletRole; wallet?: Wallet }) {
   const id = useId()
   const save = useSaveWallet()
-  const [errors, setErrors] = useState<FieldErrors>({})
+  const validation = useLiveValidation(walletInputSchema)
+  const errors = validation.errors
   const [formError, setFormError] = useState<string>()
   const title = `Carteira ${WALLET_ROLES[role].toLowerCase()}`
 
@@ -40,26 +37,25 @@ export function WalletForm({ role, wallet }: { role: WalletRole; wallet?: Wallet
       <form
         noValidate
         aria-labelledby={`${id}-title`}
+        onChange={validation.onChange}
+        onBlur={validation.onBlur}
         onSubmit={(event) => {
           event.preventDefault()
           if (save.isPending) return
           const form = event.currentTarget
-          const parsed = walletInputSchema.safeParse(Object.fromEntries(new FormData(form)))
+          const parsed = validation.submit(form)
           setFormError(undefined)
           if (!parsed.success) {
-            const fields = zodFieldErrors(parsed.error)
-            setErrors(fields)
-            focusFirstError(form, fields)
+            focusFirstError(form, parsed.fields)
             return
           }
-          setErrors({})
           save.mutate(
             { role, body: parsed.data },
             {
               onSuccess: () => toast.success(`${title} salva.`),
               onError: (error) => {
                 const result = apiFormErrors(error)
-                setErrors(result.fields)
+                validation.setApiErrors(result.fields)
                 // Field messages already explain the problem; the form message is for the rest
                 setFormError(Object.keys(result.fields).length ? undefined : result.form)
                 focusFirstError(form, result.fields)
