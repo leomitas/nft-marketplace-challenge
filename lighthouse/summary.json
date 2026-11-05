@@ -1,9 +1,9 @@
 {
   "environment": {
-    "date": "2026-11-04T22:13:45.313Z",
+    "date": "2026-11-05T11:58:16.363Z",
     "lighthouseVersion": "13.6.0",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
-    "benchmarkIndex": 1560.5,
+    "benchmarkIndex": 1616.5,
     "chrome": "C:\\Users\\Admin\\AppData\\Local\\ms-playwright\\chromium-1248\\chrome-win64\\chrome.exe",
     "node": "v24.15.0",
     "os": "Windows_NT 10.0.26200 (x64)",
@@ -13,22 +13,22 @@
   },
   "results": [
     {
-      "report": "lighthouse/reports/inicio-mobile.report.html (execução 2)",
+      "report": "lighthouse/reports/inicio-mobile.report.html (execução 1)",
       "page": "inicio",
       "path": "/",
       "profile": "mobile",
       "runs": [
         {
           "scores": {
-            "performance": 77,
+            "performance": 79,
             "accessibility": 100,
             "best-practices": 100,
             "seo": 100
           },
           "metrics": {
-            "LCP": 4553.8174,
+            "LCP": 4556.4496,
             "CLS": 0.01580013483134789,
-            "TBT": 314
+            "TBT": 261
           },
           "throttling": {
             "rttMs": 150,
@@ -42,15 +42,15 @@
         },
         {
           "scores": {
-            "performance": 74,
+            "performance": 79,
             "accessibility": 100,
             "best-practices": 100,
             "seo": 100
           },
           "metrics": {
-            "LCP": 4613.2948,
-            "CLS": 0.01580013483134789,
-            "TBT": 391
+            "LCP": 4549.3607999999995,
+            "CLS": 0,
+            "TBT": 257
           },
           "throttling": {
             "rttMs": 150,
@@ -64,15 +64,15 @@
         },
         {
           "scores": {
-            "performance": 71,
+            "performance": 79,
             "accessibility": 100,
             "best-practices": 100,
             "seo": 100
           },
           "metrics": {
-            "LCP": 4702.630300000001,
+            "LCP": 4546.6986,
             "CLS": 0.01580013483134789,
-            "TBT": 488.5
+            "TBT": 268
           },
           "throttling": {
             "rttMs": 150,
@@ -87,15 +87,15 @@
       ],
       "median": {
         "scores": {
-          "performance": 74,
+          "performance": 79,
           "accessibility": 100,
           "best-practices": 100,
           "seo": 100
         },
         "metrics": {
-          "LCP": 4613.2948,
+          "LCP": 4549.3607999999995,
           "CLS": 0.01580013483134789,
-          "TBT": 391
+          "TBT": 261
         }
       }
     },
@@ -113,9 +113,9 @@
             "seo": 100
           },
           "metrics": {
-            "LCP": 1018.6159499999999,
+            "LCP": 989.6104,
             "CLS": 0.001716619419292105,
-            "TBT": 0.9999999999998863
+            "TBT": 0
           },
           "throttling": {
             "rttMs": 40,
@@ -135,9 +135,9 @@
             "seo": 100
           },
           "metrics": {
-            "LCP": 1010.6772000000001,
+            "LCP": 962.4979750000002,
             "CLS": 0.001716619419292105,
-            "TBT": 2
+            "TBT": 0
           },
           "throttling": {
             "rttMs": 40,
@@ -157,9 +157,9 @@
             "seo": 100
           },
           "metrics": {
-            "LCP": 1011.3910000000001,
+            "LCP": 987.2795999999997,
             "CLS": 0.001716619419292105,
-            "TBT": 1
+            "TBT": 0
           },
           "throttling": {
             "rttMs": 40,
@@ -180,29 +180,29 @@
           "seo": 100
         },
         "metrics": {
-          "LCP": 1011.3910000000001,
+          "LCP": 987.2795999999997,
           "CLS": 0.001716619419292105,
-          "TBT": 1
+          "TBT": 0
         }
       }
     },
     {
-      "report": "lighthouse/reports/detalhe-mobile.report.html (execução 1)",
+      "report": "lighthouse/reports/detalhe-mobile.report.html (execução 2)",
       "page": "detalhe",
       "path": "/nfts/emerald-ape-042",
       "profile": "mobile",
       "runs": [
         {
           "scores": {
-            "performance": 72,
+            "performance": 77,
             "accessibility": 100,
             "best-practices": 100,
             "seo": 100
           },
           "metrics": {
-            "LCP": 4731.367,
+            "LCP": 4546.9956,
             "CLS": 0,
-            "TBT": 437
+            "TBT": 306
           },
           "throttling": {
             "rttMs": 150,
@@ -216,15 +216,15 @@
         },
         {
           "scores": {
-            "performance": 72,
+            "performance": 79,
             "accessibility": 100,
             "best-practices": 100,
             "seo": 100
           },
           "metrics": {
-            "LCP": 4730.056949999998,
+            "LCP": 4545.337600000001,
             "CLS": 0,
-            "TBT": 435.9999999999991
+            "TBT": 272
           },
           "throttling": {
             "rttMs": 150,
@@ -238,15 +238,15 @@
         },
         {
           "scores": {
-            "performance": 76,
+            "performance": 79,
             "accessibility": 100,
             "best-practices": 100,
             "seo": 100
           },
           "metrics": {
-            "LCP": 4557.191199999999,
+            "LCP": 4549.020399999999,
             "CLS": 0,
-            "TBT": 349
+            "TBT": 258
           },
           "throttling": {
             "rttMs": 150,
@@ -261,20 +261,20 @@
       ],
       "median": {
         "scores": {
-          "performance": 72,
+          "performance": 79,
           "accessibility": 100,
           "best-practices": 100,
           "seo": 100
         },
         "metrics": {
-          "LCP": 4730.056949999998,
+          "LCP": 4546.9956,
           "CLS": 0,
-          "TBT": 435.9999999999991
+          "TBT": 272
         }
       }
     },
     {
-      "report": "lighthouse/reports/detalhe-desktop.report.html (execução 2)",
+      "report": "lighthouse/reports/detalhe-desktop.report.html (execução 1)",
       "page": "detalhe",
       "path": "/nfts/emerald-ape-042",
       "profile": "desktop",
@@ -287,7 +287,7 @@
             "seo": 100
           },
           "metrics": {
-            "LCP": 1003.1435500000001,
+            "LCP": 957.2401749999999,
             "CLS": 0.0002464504871241811,
             "TBT": 0
           },
@@ -303,15 +303,15 @@
         },
         {
           "scores": {
-            "performance": 97,
+            "performance": 99,
             "accessibility": 100,
             "best-practices": 100,
             "seo": 100
           },
           "metrics": {
-            "LCP": 1221.8941750000001,
-            "CLS": 0.006990048000601688,
-            "TBT": 18.5
+            "LCP": 953.0890500000002,
+            "CLS": 0.0002464504871241811,
+            "TBT": 0
           },
           "throttling": {
             "rttMs": 40,
@@ -325,15 +325,15 @@
         },
         {
           "scores": {
-            "performance": 97,
+            "performance": 99,
             "accessibility": 100,
             "best-practices": 100,
             "seo": 100
           },
           "metrics": {
-            "LCP": 1205.0726,
-            "CLS": 0.006990048000601688,
-            "TBT": 14
+            "LCP": 951.3501000000001,
+            "CLS": 0.0002464504871241811,
+            "TBT": 0
           },
           "throttling": {
             "rttMs": 40,
@@ -348,15 +348,15 @@
       ],
       "median": {
         "scores": {
-          "performance": 97,
+          "performance": 99,
           "accessibility": 100,
           "best-practices": 100,
           "seo": 100
         },
         "metrics": {
-          "LCP": 1205.0726,
-          "CLS": 0.006990048000601688,
-          "TBT": 14
+          "LCP": 953.0890500000002,
+          "CLS": 0.0002464504871241811,
+          "TBT": 0
         }
       }
     }

@@ -312,10 +312,15 @@ campos, ações laranja) e funcionam em uma coluna no mobile.
   (ou a chave `kurio:mock-scenario`, a mesma usada por `?scenario=`). A UI nunca é manipulada
   diretamente.
 - Traces e screenshots só em falha; relatório HTML em `playwright-report/`.
-- Specs: `catalog`, `nft-detail`, `auth`, `cart`, `checkout`, `realtime`, `profile`, `a11y` e `visual`,
+- Specs: `catalog`, `nft-detail`, `auth`, `cart`, `checkout`, `realtime`, `profile`, `a11y`, `responsive`
+  e `visual`,
   cobrindo os 12 itens da seção 9 do enunciado. Os de tempo real passam pelo `socket.io-client` (os
   eventos são disparados pelos endpoints de controle do mock, nunca pela UI) e esperam o socket conectar
   (`html[data-realtime="online"]`) antes de mudar o servidor.
+- **Larguras** (`responsive.spec.ts`): em 390, 768 e 1440 px, início, detalhe, carrinho, login,
+  cadastro, pagamento, perfil e carteiras mostram o conteúdo principal sem overflow horizontal
+  (`scrollWidth <= clientWidth`). Sem screenshots; roda só no projeto `desktop` (a largura é definida
+  no teste).
 - **Regressão visual** (`visual.spec.ts`): início, detalhe, carrinho e pagamento, página inteira, nos
   dois projetos, com fixtures determinísticas, animações desligadas e imagens forçadas a carregar.
   Um único conjunto de baselines (`e2e/__screenshots__/`, `snapshotPathTemplate` sem `{platform}`)
@@ -337,20 +342,22 @@ padrão, Início (`/`) e Detalhe (`/nfts/emerald-ape-042`), perfis mobile (padr�
 HTML/JSON da execução mediana em `lighthouse/reports/`. Usa o Lighthouse 13 do projeto e o Chromium
 do Playwright (ou `CHROME_PATH`).
 
-Resultado (mediana, ver `lighthouse/summary.md` para o ambiente):
+Resultado (mediana, medido em 05/11/2026 sobre o build da versão final; ver `lighthouse/summary.md`
+para o ambiente). Performance das 3 execuções: início mobile 79/79/79, detalhe mobile 77/79/79,
+desktop 99 em todas.
 
 | Página  | Perfil  | Perf. | A11y | Best Pr. | SEO |     LCP |   CLS |    TBT |
 | ------- | ------- | ----: | ---: | -------: | --: | ------: | ----: | -----: |
-| Início  | mobile  |    74 |  100 |      100 | 100 | 4613 ms | 0.016 | 391 ms |
-| Início  | desktop |    99 |  100 |      100 | 100 | 1011 ms | 0.002 |   1 ms |
-| Detalhe | mobile  |    72 |  100 |      100 | 100 | 4730 ms | 0.000 | 436 ms |
-| Detalhe | desktop |    97 |  100 |      100 | 100 | 1205 ms | 0.007 |  14 ms |
+| Início  | mobile  |    79 |  100 |      100 | 100 | 4549 ms | 0.016 | 261 ms |
+| Início  | desktop |    99 |  100 |      100 | 100 |  987 ms | 0.002 |   0 ms |
+| Detalhe | mobile  |    79 |  100 |      100 | 100 | 4547 ms | 0.000 | 272 ms |
+| Detalhe | desktop |    99 |  100 |      100 | 100 |  953 ms | 0.000 |   0 ms |
 
-**Abaixo da meta: Performance mobile (72–74, meta 90).** Causa principal identificada nos relatórios:
+**Abaixo da meta: Performance mobile (79, meta 90).** Causa principal identificada nos relatórios:
 o app só pode renderizar depois que o service worker do MSW está ativo (senão as primeiras requisições
 escapariam do mock). O chunk do MSW (`browser-*.js`, ~163 KB transferidos) é o maior script da página
-e o que mais consome CPU no boot (~600 ms de 1,4 s de bootup com CPU 4× mais lenta). Somado ao app
-(~250 KB), o LCP mobile fica em ~4,6 s, quase todo como "element render delay". Em produção real (API
+e o que mais consome CPU no boot (~460–500 ms de ~1,0–1,1 s de bootup com CPU 4× mais lenta). Com o
+app, são ~410 KB de JS no caminho crítico, e o LCP mobile simulado fica em ~4,5 s. Em produção real (API
 de verdade, sem MSW no navegador) esse custo não existiria. O enunciado pede a auditoria com os mocks e
 sem simplificações exclusivas para a nota, então não foi removido.
 
@@ -362,6 +369,12 @@ Melhorias feitas durante a auditoria:
 - `favicon.svg` (o 404 do `/favicon.ico` derrubava Best Practices) e `robots.txt` (o rewrite da SPA
   devolvia o HTML e derrubava SEO);
 - pontos do carrossel com área de toque de 24 px (target size).
+
+Sobre a medição anterior (mobile 72–74): ao remedir, um `vite preview` órfão de uma execução anterior
+ainda ocupava a porta 4174, e o script reaproveitava qualquer servidor que respondesse nela. Não dá
+para garantir qual build a medição antiga auditou. O script agora recusa a porta ocupada e inicia o
+`vite` sem shell, para conseguir encerrá-lo no fim. A medição atual foi conferida: os scripts do
+relatório têm os mesmos hashes do `dist/` da versão final.
 
 Não feito por falta de tempo: pré-render de um shell estático no `index.html` (LCP mais cedo) e
 divisão do chunk do MSW por recurso.

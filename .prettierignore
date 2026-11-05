@@ -8,3 +8,4 @@ test-results
 .lighthouseci
 lighthouse/reports
 lighthouse/summary.json
+lighthouse/summary.md

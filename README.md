@@ -33,6 +33,7 @@ pnpm dev            # http://localhost:5173
 | `pnpm typecheck`              | Verificação de tipos                                                                                 |
 | `pnpm lint`                   | ESLint                                                                                               |
 | `pnpm format`                 | Prettier                                                                                             |
+| `pnpm format:check`           | Confere a formatação (fim de linha LF forçado por `.gitattributes` e Prettier, inclusive no Windows) |
 | `pnpm test:e2e`               | Playwright sem os testes visuais (build + preview, Chromium desktop 1440 e mobile Pixel 7)           |
 | `pnpm test:e2e:visual`        | Só a regressão visual (baselines geradas no Windows, ver "Regressão visual")                         |
 | `pnpm test:e2e:report`        | Abre o relatório HTML do último run (traces das falhas incluídos)                                    |
@@ -169,6 +170,26 @@ lighthouse/      resumo e relatórios da auditoria
 scripts/         lighthouse.mjs
 docs/figma/      tokens, especificação das telas e screenshots de referência
 ```
+
+## Testes E2E: relatório e traces
+
+`pnpm test:e2e` faz o build de produção, sobe o `preview` com os mocks e roda o Playwright no Chromium
+(projetos `desktop` 1440 e `mobile` Pixel 7; `e2e/responsive.spec.ts` cobre também 390, 768 e 1440
+sem overflow horizontal). Configuração em `playwright.config.ts`:
+
+- `reporter: [['html', { open: 'never' }], ['list']]`: o relatório HTML fica em `playwright-report/`;
+- `trace: 'retain-on-failure'` e `screenshot: 'only-on-failure'`: só os testes que falham guardam
+  trace e screenshot, em `test-results/<teste>/trace.zip`.
+
+```bash
+pnpm test:e2e                          # roda a suíte (sem os visuais)
+pnpm exec playwright show-report       # abre o relatório HTML (mesmo que pnpm test:e2e:report)
+pnpm exec playwright show-trace test-results/<pasta-do-teste>/trace.zip   # abre o trace de uma falha
+```
+
+No relatório, cada teste com falha tem o trace anexado (aba "Traces"), com a linha do tempo, rede,
+console e DOM de cada passo. `playwright-report/` e `test-results/` não são versionados: são gerados a
+cada execução.
 
 ## Regressão visual
 
